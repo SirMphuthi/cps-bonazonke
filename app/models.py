@@ -14,7 +14,7 @@ class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    # We will store a secure hash of the password, not the password itself
+    # Store a secure hash of the password, not the password itself
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(50), nullable=False, default='operator') # e.g., 'operator', 'admin'
     
