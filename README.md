@@ -29,7 +29,6 @@ The application is built using the Flask micro-framework for Python, following a
 
 The project is organized to separate concerns, making it clean, maintainable, and scalable.
 
-```
 /cps_bonazonke
 |
 ├── app/
@@ -47,7 +46,7 @@ The project is organized to separate concerns, making it clean, maintainable, an
 ├── .gitignore              # Specifies files for Git to ignore
 ├── requirements.txt        # A list of all Python packages required for the project
 └── README.md               # This documentation file
-```
+
 
 ---
 
