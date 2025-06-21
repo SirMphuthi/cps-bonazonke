@@ -1,164 +1,144 @@
-# COMMUNITY PROTECTION SERVICE (CPS) #BONAZONKE
+# Community Protection Service (CPS) #BONAZONKE
 
-**Tagline:** *#BONAZONKE (See Everything)*
+### Developed by Kgotso Mphuthi
 
-## 1. Overview
+## 1. Project Overview
 
-The Community Protection Service (CPS) is a backend application designed to power a next-generation, rapid-response security system for urban communities. The core concept is to drastically reduce response times to crime alerts by leveraging a network of automated surveillance drones dispatched from local stations.
+Welcome to my web stack portfolio project. For this project, I developed the **Community Protection Service (CPS)**, a backend framework designed to tackle the real-world problem of slow emergency response times in urban areas.
 
-When an incident is reported, the system identifies the nearest available drone, requests airspace clearance from a simulated aviation authority, and dispatches the drone to provide real-time aerial footage and location data to ground support units. This project serves as the foundational backend framework for such a system.
+My goal was to design and build a robust, scalable system that could serve as the core logic for a network of automated surveillance drones. The system manages incident reports, identifies available drones, and simulates a flight clearance process with an aviation authority before dispatching a unit. This project demonstrates my ability to architect a complete backend solution from the ground up to solve a complex problem.
 
-This project was developed to meet the criteria of the Web Stack Portfolio Project, focusing on backend architecture, API design, database management, and simulating real-world regulatory compliance.
+## 2. Technology Choices & Architecture
 
----
+I carefully selected the following technologies to build a robust and modern application, keeping flexibility, reliability, and professional standards in mind.
 
-## 2. Project Architecture
+* **Language: Python**
+    * **Why I chose it:** I selected Python for its clean, readable syntax and its powerful ecosystem of libraries, which is perfectly suited for rapid backend development.
 
-The application is built using the Flask micro-framework for Python, following a structured and scalable design pattern.
+* **Framework: Flask**
+    * **Why I chose it:** I chose Flask, a micro-framework, because it provided me with the flexibility to design the application's architecture from scratch. This allowed me to implement professional patterns like application factories and service layers without being constrained by a more opinionated framework.
 
-* **Backend Framework:** **Python** with **Flask**.
-* **Database:** **PostgreSQL** is used for its robustness and powerful features.
-* **Object-Relational Mapper (ORM):** **Flask-SQLAlchemy** provides a high-level interface to the database, mapping Python objects to database tables.
-* **Database Migrations:** **Flask-Migrate** (using Alembic) handles all database schema changes, allowing the data model to evolve safely over time.
-* **Environment Management:** Python's built-in **`venv`** module is used for creating an isolated project environment and managing dependencies.
-* **API Documentation:** **Flasgger** is used to automatically generate interactive API documentation via Swagger UI.
-* **Regulatory Simulation:** A dedicated **`atc_service.py`** module simulates the essential process of filing a flight plan and requesting airspace clearance from a Civil Aviation Authority (CAA), adding a critical layer of real-world complexity.
+* **Database: PostgreSQL**
+    * **Why I chose it:** For an application dealing with critical data, reliability is key. I chose PostgreSQL for its proven robustness, data integrity features, and strong performance with complex queries.
 
+* **ORM: Flask-SQLAlchemy & Flask-Migrate**
+    * **Why I chose them:** I used SQLAlchemy to interact with the database in a more Pythonic way, which abstracts away raw SQL and reduces potential errors. To manage the evolution of the database schema safely as I developed the models, I integrated Flask-Migrate.
 
-### Directory Structure
+* **API Documentation: Flasgger**
+    * **Why I chose it:** Since this is a backend-only project, clear documentation is essential. I implemented Flasgger to auto-generate a live, interactive Swagger UI page, making my API easily understandable and testable for anyone.
 
-The project is organized to separate concerns, making it clean, maintainable, and scalable.
+### Architectural Design
+
+I designed the application architecture with a focus on the "Separation of Concerns" principle to ensure the codebase is clean, maintainable, and scalable.
 
 ```
 /cps-bonazonke
 |
 ├── app/
-│   ├── __init__.py         # Initializes the Flask app and its extensions
-│   ├── models.py           # SQLAlchemy data model classes (Incident, Drone, FlightPlan, etc.)
-│   ├── routes.py           # Defines all API endpoints (e.g., /api/incidents)
-│   ├── services.py         # Contains the core business logic (e.g., dispatching a drone)
-│   ├── atc_service.py      # Simulates communication with Air Traffic Control
-│   └── config.py           # Configuration settings (e.g., database URI)
+│   ├── __init__.py         # Application factory where the app is created and configured
+│   ├── config.py           # Handles environment configurations
+│   ├── models.py           # Contains all SQLAlchemy database models
+│   ├── routes.py           # Defines all API endpoints (the "view" layer)
+│   ├── services.py         # Contains complex business logic
+│   └── atc_service.py      # Simulates the external Air Traffic Control service
 |
-├── migrations/             # Stores the database migration scripts
-├── tests/                  # All project tests will live here
-├── venv/                   # The Python virtual environment directory (ignored by Git)
-├── .env                    # For storing secret environment variables
-├── .gitignore              # Specifies files for Git to ignore
-├── requirements.txt        # A list of all Python packages required for the project
+├── migrations/             # Stores all database migration scripts
+├── venv/                   # The Python virtual environment
+├── .env                    # Local environment variables (not committed to Git)
+├── .env.example            # A template for the .env file
+├── requirements.txt        # A pinned list of all Python dependencies
+├── run.py                  # The entry point to start the application
+├── seed.py                 # My script to seed the database with sample data
 └── README.md               # This documentation file
 ```
 
-
----
 ---
 
-## 3. Setup and Installation
+## 3. Local Setup and Installation
 
-To run this project locally, you will need **Python 3.8+** and **PostgreSQL** installed on your Linux system.
+To get the project running on your local machine, please follow these steps. You will need Python 3.8+ and PostgreSQL installed.
 
-### Step 1: Clone the Repository
-
+#### Step 1: Clone the Repository
 ```bash
 git clone [https://github.com/your-username/cps-bonazonke.git](https://github.com/your-username/cps-bonazonke.git)
 cd cps-bonazonke
 ```
 
-### Step 2: Create and Activate Virtual Environment
-
-This isolates the project's dependencies from your global Python installation.
-
+#### Step 2: Set Up the Environment
 ```bash
+# Create and activate the Python virtual environment
 python3 -m venv venv
 source venv/bin/activate
-```
-*(You must run `source venv/bin/activate` every time you open a new terminal to work on this project.)*
 
-### Step 3: Install Dependencies
-
-```bash
+# Install all the required packages from the pinned list
 pip install -r requirements.txt
 ```
-*(Note: We will populate the `requirements.txt` file during the development phase.)*
 
-### Step 4: Set Up PostgreSQL Database
-
-You need to create a dedicated user and database for the application.
-
+#### Step 3: Set Up the PostgreSQL Database
 ```bash
-# Log in to PostgreSQL as the default superuser
+# Log in to PostgreSQL as the default admin user
 sudo -u postgres psql
 
-# Create a new database for the project
+# Create the database and user for this project
 CREATE DATABASE cps_db;
-
-# Create a new user and password (replace 'password' with a strong password)
 CREATE USER cps_user WITH PASSWORD 'password';
-
-# Grant all privileges for the new database to the new user
 GRANT ALL PRIVILEGES ON DATABASE cps_db TO cps_user;
-
-# Exit the psql shell
 \q
 ```
 
-### Step 5: Configure Environment Variables
-
-Create a `.env` file in the project root to store your secret configurations.
-
+#### Step 4: Configure Environment Variables
+Create your local `.env` file by copying the template.
 ```bash
-# Create the .env file
-touch .env
+cp .env.example .env
 ```
-
-Now, open the `.env` file and add the following lines, replacing the password if you chose a different one.
-
-```
-FLASK_APP=run.py
-FLASK_ENV=development
-DATABASE_URL="postgresql://cps_user:password@localhost/cps_db"
-```
+Then, open the new `.env` file and ensure the `DATABASE_URL` is correct (the password is 'password' if you followed the step above).
 
 ---
 
-## 4. Database Migrations
+## 4. Database Management
 
-Before running the app for the first time, and any time you change the data models in `app/models.py`, you must run migrations to update the database schema.
-
+#### Migrations
+Before running the app for the first time, and any time the models in `app/models.py` are changed, the database schema must be updated.
 ```bash
-# To initialize the migrations folder (only run this once)
+# To initialize the migrations folder (only run once per project)
 flask db init
 
-# To generate a new migration script after changing a model
-flask db migrate -m "Describe the change you made"
+# To generate a new migration script
+flask db migrate -m "A message describing the changes"
 
-# To apply the migration to the database
+# To apply the changes to the database
 flask db upgrade
+```
+
+#### Seeding the Database (Optional)
+I have included a seed script to populate the database with a consistent set of sample data for testing and demonstration. This script will wipe existing data before populating.
+```bash
+python seed.py
 ```
 
 ---
 
 ## 5. Running the Application
 
-Once the setup is complete, you can run the development server.
-
+Once the setup is complete, you can start the Flask development server.
 ```bash
 flask run
 ```
+The API will now be available at `http://127.0.0.1:5000`.
 
-The API will be available at `http://localhost:5000`.
+The API documentation is generated live and can be viewed in a web browser at: **`http://127.0.0.1:5000/apidocs`**
 
 ---
 
-## 6. API Documentation
+## 6. Future Enhancements
 
-Full, interactive API documentation is automatically generated and available via Swagger UI once the application is running.
+Looking ahead, I have identified several exciting potential enhancements for this project that would build upon the current foundation:
 
-* **Swagger UI URL:** `http://localhost:5000/apidocs`
+* **Asynchronous Operations:** Integrate a task queue like Celery and Redis to handle the simulated ATC clearance request asynchronously, preventing the API from blocking and providing a more responsive experience.
+* **Real-time Dashboard:** Implement WebSockets to push live location updates of drones to a frontend, creating a real-time monitoring dashboard.
+* **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) to protect the API endpoints, which is standard practice for modern web services.
+* **Advanced Dispatch Logic:** Improve the `services.py` logic to calculate the geographically closest drone, accounting for potential obstacles, instead of just selecting the first available unit.
 
-### Key Endpoints
+---
 
-* `POST /api/incidents`: Report a new crime incident. The system will automatically attempt to find a drone and get airspace clearance.
-* `GET /api/incidents/<id>`: Check the status of a specific incident. The status may reflect the ATC clearance process (e.g., `AWAITING_AIRSPACE_CLEARANCE`).
-* `GET /api/drones`: View the status of all drones in the fleet.
-* `GET /api/flightplans`: View the status of recent or active flight plans submitted to the ATC.
+Thank you for reviewing my project!
