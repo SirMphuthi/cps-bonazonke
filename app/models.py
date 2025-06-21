@@ -42,8 +42,11 @@ class Drone(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.String(50), nullable=False, default='AVAILABLE')
     battery_level = db.Column(db.Integer, nullable=False, default=100)
-    
-    # Relationships
+
+    current_latitude = db.Column(db.Float, nullable=False)
+    current_longitude = db.Column(db.Float, nullable=False)
+
+     # Relationships
     station_id = db.Column(db.Integer, db.ForeignKey('station.id'), nullable=False)
     station = db.relationship('Station', back_populates='drones')
     flight_plans = db.relationship('FlightPlan', secondary=drone_flightplan_association, back_populates='drones', lazy='dynamic')

@@ -16,8 +16,8 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     Swagger(app)
 
-    #  register API routes here later
-    # from .routes import main as main_blueprint
-    # app.register_blueprint(main_blueprint)
+    #  register API routes here (Blueprint)
+    from .routes import api as api_blueprint
+    app.register_blueprint(api_blueprint)
 
     return app
