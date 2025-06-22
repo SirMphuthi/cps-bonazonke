@@ -155,3 +155,14 @@ Looking ahead, I have identified several exciting potential enhancements for thi
 * **Real-time Monitoring Dashboard:** Implement WebSockets to push live location updates of drones and new incident alerts to a frontend application, creating a real-time command-and-control dashboard for operators.
 
 * **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) upon successful login. These tokens would then be required to access protected API endpoints, implementing a stateless and industry-standard security model.
+
+
+---
+
+## Copyright & License
+
+© 2025 Kgotso Mphuthi. All Rights Reserved.
+
+This software is the proprietary property of Kgotso Mphuthi. You are granted temporary permission to view the source code for the sole purpose of assessing my technical skills. No other rights are granted. You may not copy, modify, distribute, or use this software for any other purpose without my express written permission.
+
+---
