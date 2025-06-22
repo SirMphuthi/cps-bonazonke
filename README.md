@@ -144,14 +144,14 @@ This interactive page allows you to see all available endpoints, their expected 
 
 ---
 
-## 8. Future Enhancements
+## Future Enhancements
 
-Looking ahead, I have identified several exciting potential enhancements for this project:
+Looking ahead, I have identified several exciting potential enhancements for this project that would build upon the current foundation:
 
-* **Asynchronous Operations:** Integrate a task queue like Celery and Redis to handle the simulated ATC clearance request asynchronously.
-* **Real-time Dashboard:** Implement WebSockets to push live location updates of drones to a frontend dashboard.
-* **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) to protect the API endpoints.
+* **Facial Recognition Integration:** Develop a separate microservice to handle image analysis. This service would receive images captured by drones at an incident scene and integrate with a mock Department of Home Affairs API to identify persons of interest, linking their identity back to the incident report. This demonstrates an understanding of microservice architecture and secure third-party API integration.
 
----
+* **Asynchronous Task Handling:** Integrate a task queue like Celery with Redis to handle time-consuming operations like the ATC clearance request and facial recognition processing. This would prevent the API from blocking and create a more responsive and scalable system.
 
-Thank you for reviewing my project!
+* **Real-time Monitoring Dashboard:** Implement WebSockets to push live location updates of drones and new incident alerts to a frontend application, creating a real-time command-and-control dashboard for operators.
+
+* **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) upon successful login. These tokens would then be required to access protected API endpoints, implementing a stateless and industry-standard security model.
