@@ -12,45 +12,14 @@ My goal was to design and build a robust, scalable system that could serve as th
 
 I carefully selected the following technologies to build a robust and modern application, keeping flexibility, reliability, and professional standards in mind.
 
-* **Language: Python**
-    * **Why I chose it:** I selected Python for its clean, readable syntax and its powerful ecosystem of libraries, which is perfectly suited for rapid backend development.
-
-* **Framework: Flask**
-    * **Why I chose it:** I chose Flask, a micro-framework, because it provided me with the flexibility to design the application's architecture from scratch. This allowed me to implement professional patterns like application factories and service layers without being constrained by a more opinionated framework.
-
+* **Language: Python** & **Framework: Flask**
+    * **Why:** I chose Flask for its flexibility, which allowed me to design a custom architecture and implement professional patterns like application factories and service layers.
 * **Database: PostgreSQL**
-    * **Why I chose it:** For an application dealing with critical data, reliability is key. I chose PostgreSQL for its proven robustness, data integrity features, and strong performance with complex queries.
-
+    * **Why:** For an application dealing with critical data, I chose PostgreSQL for its proven reliability and data integrity features.
 * **ORM: Flask-SQLAlchemy & Flask-Migrate**
-    * **Why I chose them:** I used SQLAlchemy to interact with the database in a more Pythonic way, which abstracts away raw SQL and reduces potential errors. To manage the evolution of the database schema safely as I developed the models, I integrated Flask-Migrate.
-
+    * **Why:** I used SQLAlchemy to interact with the database in a more Pythonic way. To manage changes to the database schema safely as I developed the models, I integrated Flask-Migrate.
 * **API Documentation: Flasgger**
-    * **Why I chose it:** Since this is a backend-only project, clear documentation is essential. I implemented Flasgger to auto-generate a live, interactive Swagger UI page, making my API easily understandable and testable for anyone.
-
-### Architectural Design
-
-I designed the application architecture with a focus on the "Separation of Concerns" principle to ensure the codebase is clean, maintainable, and scalable.
-
-```
-/cps-bonazonke
-|
-├── app/
-│   ├── __init__.py         # Application factory where the app is created and configured
-│   ├── config.py           # Handles environment configurations
-│   ├── models.py           # Contains all SQLAlchemy database models
-│   ├── routes.py           # Defines all API endpoints (the "view" layer)
-│   ├── services.py         # Contains complex business logic
-│   └── atc_service.py      # Simulates the external Air Traffic Control service
-|
-├── migrations/             # Stores all database migration scripts
-├── venv/                   # The Python virtual environment
-├── .env                    # Local environment variables (not committed to Git)
-├── .env.example            # A template for the .env file
-├── requirements.txt        # A pinned list of all Python dependencies
-├── run.py                  # The entry point to start the application
-├── seed.py                 # My script to seed the database with sample data
-└── README.md               # This documentation file
-```
+    * **Why:** Clear documentation is essential. I implemented Flasgger to auto-generate a live, interactive Swagger UI page, making my API easily understandable and testable.
 
 ---
 
@@ -76,7 +45,7 @@ pip install -r requirements.txt
 
 #### Step 3: Set Up the PostgreSQL Database
 ```bash
-# Log in to PostgreSQL as the default admin user
+# Log into PostgreSQL as the default admin user
 sudo -u postgres psql
 
 # Create the database and user for this project
@@ -91,53 +60,97 @@ Create your local `.env` file by copying the template.
 ```bash
 cp .env.example .env
 ```
-Then, open the new `.env` file and ensure the `DATABASE_URL` is correct (the password is 'password' if you followed the step above).
+Now, open the new `.env` file and ensure the `DATABASE_URL` is correct (the password is 'password' if you followed Step 3 exactly).
 
 ---
 
-## 4. Database Management
+## 4. Database Initialization
 
-#### Migrations
-Before running the app for the first time, and any time the models in `app/models.py` are changed, the database schema must be updated.
-```bash
-# To initialize the migrations folder (only run once per project)
-flask db init
+Before running the app for the first time, you must create the database tables.
 
-# To generate a new migration script
-flask db migrate -m "A message describing the changes"
-
-# To apply the changes to the database
-flask db upgrade
-```
-
-#### Seeding the Database (Optional)
-I have included a seed script to populate the database with a consistent set of sample data for testing and demonstration. This script will wipe existing data before populating.
-```bash
-python seed.py
-```
+1.  **Initialize the migrations folder** (only needs to be run once per project):
+    ```bash
+    flask db init
+    ```
+2.  **Generate the migration script:**
+    ```bash
+    flask db migrate -m "Initial database schema"
+    ```
+3.  **Apply the migrations to create the tables:**
+    ```bash
+    flask db upgrade
+    ```
+4.  **(Optional) Seed the database** with sample data for a clean demonstration. This script will wipe existing data first.
+    ```bash
+    python seed.py
+    ```
 
 ---
 
 ## 5. Running the Application
 
-Once the setup is complete, you can start the Flask development server.
+Once the database is initialized, you can start the Flask development server. This terminal window must be kept running.
 ```bash
 flask run
 ```
-The API will now be available at `http://127.0.0.1:5000`.
-
-The API documentation is generated live and can be viewed in a web browser at: **`http://127.0.0.1:5000/apidocs`**
+The API is now live and available at `http://127.0.0.1:5000`.
 
 ---
 
-## 6. Future Enhancements
+## 6. How to Test the API
 
-Looking ahead, I have identified several exciting potential enhancements for this project that would build upon the current foundation:
+Once the server is running, open a **second terminal** with the virtual environment activated (`source venv/bin/activate`). You can use the following `curl` commands to test the core end-to-end functionality.
 
-* **Asynchronous Operations:** Integrate a task queue like Celery and Redis to handle the simulated ATC clearance request asynchronously, preventing the API from blocking and providing a more responsive experience.
-* **Real-time Dashboard:** Implement WebSockets to push live location updates of drones to a frontend, creating a real-time monitoring dashboard.
-* **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) to protect the API endpoints, which is standard practice for modern web services.
-* **Advanced Dispatch Logic:** Improve the `services.py` logic to calculate the geographically closest drone, accounting for potential obstacles, instead of just selecting the first available unit.
+1.  **Check the seeded stations:**
+    ```bash
+    curl [http://127.0.0.1:5000/api/stations](http://127.0.0.1:5000/api/stations)
+    ```
+
+2.  **Simulate reporting a new incident:**
+    This tests the main workflow: creating an incident, finding a drone, and simulating an ATC request.
+    ```bash
+    curl -X POST [http://127.0.0.1:5000/api/incidents](http://127.0.0.1:5000/api/incidents) \
+    -H "Content-Type: application/json" \
+    -d '{
+        "latitude": -26.2041,
+        "longitude": 28.0473,
+        "description": "Robbery in progress in Johannesburg Central.",
+        "reporter_id": 1
+    }'
+    ```
+
+3.  **Update the new incident's status** (assuming it has `id: 1`):
+    ```bash
+    curl -X PATCH [http://127.0.0.1:5000/api/incidents/1](http://127.0.0.1:5000/api/incidents/1) \
+    -H "Content-Type: application/json" \
+    -d '{"status": "RESOLVED"}'
+    ```
+
+4.  **Verify the update:**
+    ```bash
+    curl [http://127.0.0.1:5000/api/incidents/1](http://127.0.0.1:5000/api/incidents/1)
+    ```
+
+---
+
+## 7. API Documentation
+
+For a more detailed and interactive way to explore the API, I have integrated Flasgger to provide a live Swagger UI documentation page.
+
+* **How to access:** While the Flask server is running, open your web browser and navigate to:
+    **`http://127.0.0.1:5000/apidocs`**
+
+This interactive page allows you to see all available endpoints, their expected parameters, and test them directly from the browser.
+
+---
+
+## 8. Future Enhancements
+
+Looking ahead, I have identified several exciting potential enhancements for this project:
+
+* **Asynchronous Operations:** Integrate a task queue like Celery and Redis to handle the simulated ATC clearance request asynchronously.
+* **Real-time Dashboard:** Implement WebSockets to push live location updates of drones to a frontend dashboard.
+* **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) to protect the API endpoints.
 
 ---
 
