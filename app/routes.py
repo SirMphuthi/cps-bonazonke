@@ -1,15 +1,51 @@
+# app/routes.py
+
 from flask import Blueprint, request, jsonify
 from .models import Station, Drone, User, Incident, FlightPlan, db
 from .services import report_and_dispatch_drone
+# New imports for JWT
+from flask_jwt_extended import create_access_token, jwt_required
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
 
-# --- Station Endpoints ---
+# --- User & Auth Endpoints (Public) ---
+
+@api.route('/users', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    if not data or 'username' not in data or not 'password' in data:
+        return jsonify({'error': 'Missing username or password'}), 400
+    
+    new_user = User(username=data['username'])
+    new_user.set_password(data['password'])
+    
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({'id': new_user.id, 'username': new_user.username}), 201
+
+@api.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    if not data or not 'username' in data or not 'password' in data:
+        return jsonify({'error': 'Missing username or password'}), 400
+
+    user = User.query.filter_by(username=data['username']).first()
+
+    if not user or not user.check_password(data['password']):
+        return jsonify({'error': 'Invalid username or password'}), 401
+
+    access_token = create_access_token(identity=user.id)
+    return jsonify(access_token=access_token)
+
+
+# --- Protected Endpoints Below ---
+# All routes from here on will require a valid JWT.
+
 @api.route('/stations', methods=['POST', 'GET'])
+@jwt_required()
 def handle_stations():
     if request.method == 'POST':
-        # Code to create a station...
         data = request.get_json()
         if not data or not all(key in data for key in ['name', 'latitude', 'longitude']):
             return jsonify({'error': 'Missing required fields'}), 400
@@ -19,28 +55,23 @@ def handle_stations():
         return jsonify({'id': new_station.id, 'name': new_station.name, 'latitude': new_station.latitude, 'longitude': new_station.longitude}), 201
     
     if request.method == 'GET':
-        # Code to get all stations...
         stations_list = Station.query.all()
         stations_data = [{'id': s.id, 'name': s.name, 'latitude': s.latitude, 'longitude': s.longitude} for s in stations_list]
         return jsonify(stations_data)
 
 @api.route('/stations/<int:station_id>', methods=['GET', 'DELETE'])
+@jwt_required()
 def handle_station(station_id):
     station = Station.query.get_or_404(station_id)
-    
     if request.method == 'GET':
         return jsonify({'id': station.id, 'name': station.name, 'latitude': station.latitude, 'longitude': station.longitude})
-    
     if request.method == 'DELETE':
-        # Logic to delete a station
         db.session.delete(station)
         db.session.commit()
         return jsonify({'message': f'Station {station.name} with id {station_id} has been deleted.'})
 
-
-# --- Drone Endpoints ---
-# ... (no changes to your other drone, user, incident, and flightplan endpoints) ...
 @api.route('/drones', methods=['POST', 'GET'])
+@jwt_required()
 def handle_drones():
     if request.method == 'POST':
         data = request.get_json()
@@ -59,32 +90,13 @@ def handle_drones():
         return jsonify(drones_data)
 
 @api.route('/drones/<int:drone_id>', methods=['GET'])
+@jwt_required()
 def get_drone(drone_id):
     drone = Drone.query.get_or_404(drone_id)
     return jsonify({'id': drone.id, 'station_id': drone.station_id, 'status': drone.status, 'battery_level': drone.battery_level, 'current_latitude': drone.current_latitude, 'current_longitude': drone.current_longitude})
 
-@api.route('/users', methods=['POST'])
-def create_user():
-    data = request.get_json()
-    if not data or 'username' not in data or not 'password' in data:
-        return jsonify({'error': 'Missing username or password'}), 400
-    new_user = User(username=data['username'])
-    new_user.set_password(data['password'])
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({'id': new_user.id, 'username': new_user.username}), 201
-
-@api.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    if not data or not 'username' in data or not 'password' in data:
-        return jsonify({'error': 'Missing username or password'}), 400
-    user = User.query.filter_by(username=data['username']).first()
-    if not user or not user.check_password(data['password']):
-        return jsonify({'error': 'Invalid username or password'}), 401
-    return jsonify({'message': f'Login successful for user {user.username}.'})
-
 @api.route('/incidents', methods=['POST', 'GET'])
+@jwt_required()
 def handle_incidents():
     if request.method == 'POST':
         data = request.get_json()
@@ -101,6 +113,7 @@ def handle_incidents():
         return jsonify(incidents_data)
 
 @api.route('/incidents/<int:incident_id>', methods=['GET', 'PATCH'])
+@jwt_required()
 def handle_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
     if request.method == 'GET':
@@ -114,6 +127,7 @@ def handle_incident(incident_id):
         return jsonify({'id': incident.id, 'status': incident.status, 'description': incident.description})
 
 @api.route('/flightplans', methods=['GET'])
+@jwt_required()
 def get_flightplans():
     plans_list = FlightPlan.query.all()
     plans_data = [{'id': p.id, 'incident_id': p.incident_id, 'status': p.status, 'clearance_code': p.clearance_code} for p in plans_list]

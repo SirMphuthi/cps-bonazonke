@@ -5,13 +5,13 @@ services:
     build: .
     command: flask run --host=0.0.0.0
     ports:
-      - "5000:5000"  # <-- This connects the container's port 5000 to your computer's port 5000
+      - "5000:5000"
+    volumes:
+      - .:/cps-bonazonke
     environment:
       - FLASK_APP=run.py
       - FLASK_DEBUG=1
       - DATABASE_URL=postgresql://cps_user:password@db/cps_db
-    volumes:
-      - .:/cps-bonazonke
     depends_on:
       - db
 
@@ -23,6 +23,8 @@ services:
       - POSTGRES_USER=cps_user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=cps_db
+    ports:
+      - "5432:5432"
 
 volumes:
   postgres_data:

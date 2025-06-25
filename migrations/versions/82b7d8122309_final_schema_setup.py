@@ -1,8 +1,8 @@
-"""Creating all tables
+"""Final schema setup
 
-Revision ID: e27fb4bb1543
+Revision ID: 82b7d8122309
 Revises: 
-Create Date: 2025-06-21 07:51:41.365909
+Create Date: 2025-06-25 18:20:30.102084
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e27fb4bb1543'
+revision = '82b7d8122309'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -38,6 +38,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('battery_level', sa.Integer(), nullable=False),
+    sa.Column('current_latitude', sa.Float(), nullable=False),
+    sa.Column('current_longitude', sa.Float(), nullable=False),
     sa.Column('station_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['station_id'], ['station.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -48,7 +50,7 @@ def upgrade():
     sa.Column('longitude', sa.Float(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('reporter_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['reporter_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -57,7 +59,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('clearance_code', sa.String(length=100), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('incident_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['incident_id'], ['incident.id'], ),

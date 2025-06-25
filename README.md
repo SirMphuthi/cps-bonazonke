@@ -6,18 +6,24 @@
 
 Welcome to my web stack portfolio project. For this project, I developed the **Community Protection Service (CPS)**, a backend framework designed to tackle the real-world problem of slow emergency response times in urban areas.
 
-My goal was to design and build a robust, scalable system that could serve as the core logic for a network of automated surveillance drones. The system manages incident reports, identifies available drones, and simulates a flight clearance process with an aviation authority before dispatching a unit. This project demonstrates my ability to architect a complete backend solution from the ground up to solve a complex problem.
+My goal was to design and build a robust, secure, and scalable system that could serve as the core logic for a network of automated surveillance drones. The system manages incident reports, identifies available drones, simulates a flight clearance process, and secures its endpoints using token-based authentication. This project demonstrates my ability to architect a complete backend solution from the ground up to solve a complex problem.
 
 ## 2. Technology Choices & Architecture
 
-I carefully selected the following technologies to build a robust and modern application, keeping flexibility, reliability, and professional standards in mind.
+I carefully selected the following technologies to build a modern and professional application.
 
 * **Language: Python** & **Framework: Flask**
-    * **Why:** I chose Flask for its flexibility, which allowed me to design a custom architecture and implement professional patterns like application factories and service layers.
-* **Database: PostgreSQL**
-    * **Why:** For an application dealing with critical data, I chose PostgreSQL for its proven reliability and data integrity features.
+    * **Why:** I chose Flask for its flexibility, which allowed me to design a custom architecture from scratch and implement professional patterns like application factories and service layers.
+
+* **Database: PostgreSQL / SQLite**
+    * **Why:** The application is designed to use PostgreSQL for its robustness and data integrity in a production-like environment. For simplicity in development and demonstration, it is configured to use SQLite, showcasing its adaptability to different database backends.
+
 * **ORM: Flask-SQLAlchemy & Flask-Migrate**
-    * **Why:** I used SQLAlchemy to interact with the database in a more Pythonic way. To manage changes to the database schema safely as I developed the models, I integrated Flask-Migrate.
+    * **Why:** I used SQLAlchemy to interact with the database in a more Pythonic way. To manage changes to the database schema safely as the models evolved, I integrated Flask-Migrate.
+
+* **Security: Flask-JWT-Extended**
+    * **Why:** To secure the API, I implemented JSON Web Tokens (JWT), the industry standard for stateless authentication in modern web services. This ensures that data can only be accessed by authorized users.
+
 * **API Documentation: Flasgger**
     * **Why:** Clear documentation is essential. I implemented Flasgger to auto-generate a live, interactive Swagger UI page, making my API easily understandable and testable.
 
@@ -25,7 +31,7 @@ I carefully selected the following technologies to build a robust and modern app
 
 ## 3. Local Setup and Installation
 
-To get the project running on your local machine, please follow these steps. You will need Python 3.8+ and PostgreSQL installed.
+To get the project running on your local machine, you will need Python 3.8+ and the necessary build tools.
 
 #### Step 1: Clone the Repository
 ```bash
@@ -42,31 +48,20 @@ source venv/bin/activate
 # Install all the required packages from the pinned list
 pip install -r requirements.txt
 ```
+*(Note: If the above command fails on a fresh system, you may need to install system-level development tools first with `sudo apt-get install postgresql libpq-dev`)*
 
-#### Step 3: Set Up the PostgreSQL Database
-```bash
-# Log into PostgreSQL as the default admin user
-sudo -u postgres psql
-
-# Create the database and user for this project
-CREATE DATABASE cps_db;
-CREATE USER cps_user WITH PASSWORD 'password';
-GRANT ALL PRIVILEGES ON DATABASE cps_db TO cps_user;
-\q
-```
-
-#### Step 4: Configure Environment Variables
-Create your local `.env` file by copying the template.
+#### Step 3: Configure Environment Variables
+Create your local `.env` file by copying the template. This file tells the application how to connect to the database and what secret keys to use.
 ```bash
 cp .env.example .env
 ```
-Now, open the new `.env` file and ensure the `DATABASE_URL` is correct (the password is 'password' if you followed Step 3 exactly).
+*(The default configuration is set up to use a local SQLite database file, which requires no extra setup.)*
 
 ---
 
 ## 4. Database Initialization
 
-Before running the app for the first time, you must create the database tables.
+Before running the app, you must create the database file and its tables.
 
 1.  **Initialize the migrations folder** (only needs to be run once per project):
     ```bash
@@ -80,7 +75,7 @@ Before running the app for the first time, you must create the database tables.
     ```bash
     flask db upgrade
     ```
-4.  **(Optional) Seed the database** with sample data for a clean demonstration. This script will wipe existing data first.
+4.  **(Recommended) Seed the database** with sample data for a clean demonstration. This script will wipe existing data first.
     ```bash
     python seed.py
     ```
@@ -97,65 +92,45 @@ The API is now live and available at `http://127.0.0.1:5000`.
 
 ---
 
-## 6. How to Test the API
+## 6. How to Test the Secure API
 
-Once the server is running, open a **second terminal** with the virtual environment activated (`source venv/bin/activate`). You can use the following `curl` commands to test the core end-to-end functionality.
+Once the server is running, open a **second terminal** with the virtual environment activated (`source venv/bin/activate`). Since the API is now secure, you must log in to get an access token before you can test other features.
 
-1.  **Check the seeded stations:**
-    ```bash
-    curl [http://127.0.0.1:5000/api/stations](http://127.0.0.1:5000/api/stations)
-    ```
+### Step 1: Log In and Get Your Token
 
-2.  **Simulate reporting a new incident:**
-    This tests the main workflow: creating an incident, finding a drone, and simulating an ATC request.
-    ```bash
-    curl -X POST [http://127.0.0.1:5000/api/incidents](http://127.0.0.1:5000/api/incidents) \
-    -H "Content-Type: application/json" \
-    -d '{
-        "latitude": -26.2041,
-        "longitude": 28.0473,
-        "description": "Robbery in progress in Johannesburg Central.",
-        "reporter_id": 1
-    }'
-    ```
+Use the credentials for `operator1` (password: `password123`), which were created by the `seed.py` script.
 
-3.  **Update the new incident's status** (assuming it has `id: 1`):
-    ```bash
-    curl -X PATCH [http://127.0.0.1:5000/api/incidents/1](http://127.0.0.1:5000/api/incidents/1) \
-    -H "Content-Type: application/json" \
-    -d '{"status": "RESOLVED"}'
-    ```
+```bash
+curl -X POST [http://127.0.0.1:5000/api/login](http://127.0.0.1:5000/api/login) \
+-H "Content-Type: application/json" \
+-d '{
+    "username": "operator1",
+    "password": "password123"
+}'
+```
+This will return an `access_token`. **Copy the long string of characters inside the quotes.**
 
-4.  **Verify the update:**
-    ```bash
-    curl [http://127.0.0.1:5000/api/incidents/1](http://127.0.0.1:5000/api/incidents/1)
-    ```
+### Step 2: Test a Protected Endpoint
+
+Now, you can use that token to access any protected route. We will store it in a shell variable for convenience.
+
+```bash
+# Replace <COPIED_TOKEN> with the actual token you copied
+TOKEN="<COPIED_TOKEN>"
+
+# Now, use the token to get the list of drones
+curl [http://127.0.0.1:5000/api/drones](http://127.0.0.1:5000/api/drones) -H "Authorization: Bearer $TOKEN"
+```
+This workflow of logging in and using the returned token is how modern, secure APIs are tested and used.
 
 ---
 
-## 7. API Documentation
+## 7. Interactive API Documentation
 
-For a more detailed and interactive way to explore the API, I have integrated Flasgger to provide a live Swagger UI documentation page.
+For a more user-friendly way to explore the API, I have integrated Flasgger to provide a live Swagger UI documentation page.
 
 * **How to access:** While the Flask server is running, open your web browser and navigate to:
     **`http://127.0.0.1:5000/apidocs`**
-
-This interactive page allows you to see all available endpoints, their expected parameters, and test them directly from the browser.
-
----
-
-## Future Enhancements
-
-Looking ahead, I have identified several exciting potential enhancements for this project that would build upon the current foundation:
-
-* **Facial Recognition Integration:** Develop a separate microservice to handle image analysis. This service would receive images captured by drones at an incident scene and integrate with a mock Department of Home Affairs API to identify persons of interest, linking their identity back to the incident report. This demonstrates an understanding of microservice architecture and secure third-party API integration.
-
-* **Asynchronous Task Handling:** Integrate a task queue like Celery with Redis to handle time-consuming operations like the ATC clearance request and facial recognition processing. This would prevent the API from blocking and create a more responsive and scalable system.
-
-* **Real-time Monitoring Dashboard:** Implement WebSockets to push live location updates of drones and new incident alerts to a frontend application, creating a real-time command-and-control dashboard for operators.
-
-* **Token-Based Authentication:** Enhance the login system by generating secure JSON Web Tokens (JWT) upon successful login. These tokens would then be required to access protected API endpoints, implementing a stateless and industry-standard security model.
-
 
 ---
 
