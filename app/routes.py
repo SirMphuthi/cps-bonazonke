@@ -1,25 +1,21 @@
 # app/routes.py
 
 from flask import Blueprint, request, jsonify
-from .models import Station, Drone, User, Incident, FlightPlan, db
+from .models import Station, Drone, User, Incident, FlightPlan, GroundUnit, db # Added GroundUnit
 from .services import report_and_dispatch_drone
-# New imports for JWT
 from flask_jwt_extended import create_access_token, jwt_required
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
 
 # --- User & Auth Endpoints (Public) ---
-
 @api.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json()
     if not data or 'username' not in data or not 'password' in data:
         return jsonify({'error': 'Missing username or password'}), 400
-    
     new_user = User(username=data['username'])
     new_user.set_password(data['password'])
-    
     db.session.add(new_user)
     db.session.commit()
     return jsonify({'id': new_user.id, 'username': new_user.username}), 201
@@ -29,19 +25,16 @@ def login():
     data = request.get_json()
     if not data or not 'username' in data or not 'password' in data:
         return jsonify({'error': 'Missing username or password'}), 400
-
     user = User.query.filter_by(username=data['username']).first()
-
     if not user or not user.check_password(data['password']):
         return jsonify({'error': 'Invalid username or password'}), 401
-
     access_token = create_access_token(identity=user.id)
     return jsonify(access_token=access_token)
 
 
 # --- Protected Endpoints Below ---
-# All routes from here on will require a valid JWT.
 
+# --- Station Endpoints ---
 @api.route('/stations', methods=['POST', 'GET'])
 @jwt_required()
 def handle_stations():
@@ -53,7 +46,6 @@ def handle_stations():
         db.session.add(new_station)
         db.session.commit()
         return jsonify({'id': new_station.id, 'name': new_station.name, 'latitude': new_station.latitude, 'longitude': new_station.longitude}), 201
-    
     if request.method == 'GET':
         stations_list = Station.query.all()
         stations_data = [{'id': s.id, 'name': s.name, 'latitude': s.latitude, 'longitude': s.longitude} for s in stations_list]
@@ -70,6 +62,38 @@ def handle_station(station_id):
         db.session.commit()
         return jsonify({'message': f'Station {station.name} with id {station_id} has been deleted.'})
 
+
+# --- Ground Unit Endpoints (NEW) ---
+@api.route('/ground-units', methods=['POST', 'GET'])
+@jwt_required()
+def handle_ground_units():
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data or not all(key in data for key in ['call_sign', 'latitude', 'longitude']):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        new_unit = GroundUnit(
+            call_sign=data['call_sign'],
+            current_latitude=data['latitude'],
+            current_longitude=data['longitude']
+        )
+        db.session.add(new_unit)
+        db.session.commit()
+        
+        return jsonify({
+            'id': new_unit.id,
+            'call_sign': new_unit.call_sign,
+            'status': new_unit.status
+        }), 201
+
+    if request.method == 'GET':
+        units_list = GroundUnit.query.all()
+        units_data = [{'id': u.id, 'call_sign': u.call_sign, 'status': u.status} for u in units_list]
+        return jsonify(units_data)
+
+
+# --- Drone Endpoints ---
+# ... (Drone, Incident, and FlightPlan endpoints are here, no changes needed) ...
 @api.route('/drones', methods=['POST', 'GET'])
 @jwt_required()
 def handle_drones():
