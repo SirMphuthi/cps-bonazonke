@@ -1,14 +1,11 @@
-# app/routes.py
-
 from flask import Blueprint, request, jsonify
-from .models import Station, Drone, User, Incident, FlightPlan, GroundUnit, db # Added GroundUnit
-from .services import report_and_dispatch_drone
+from .models import Station, Drone, User, Incident, FlightPlan, GroundUnit, db
+from .services import report_and_dispatch_drone, calculate_hotspots
 from flask_jwt_extended import create_access_token, jwt_required
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
 
-# --- User & Auth Endpoints (Public) ---
 @api.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json()
@@ -31,10 +28,6 @@ def login():
     access_token = create_access_token(identity=user.id)
     return jsonify(access_token=access_token)
 
-
-# --- Protected Endpoints Below ---
-
-# --- Station Endpoints ---
 @api.route('/stations', methods=['POST', 'GET'])
 @jwt_required()
 def handle_stations():
@@ -62,8 +55,6 @@ def handle_station(station_id):
         db.session.commit()
         return jsonify({'message': f'Station {station.name} with id {station_id} has been deleted.'})
 
-
-# --- Ground Unit Endpoints (NEW) ---
 @api.route('/ground-units', methods=['POST', 'GET'])
 @jwt_required()
 def handle_ground_units():
@@ -71,29 +62,15 @@ def handle_ground_units():
         data = request.get_json()
         if not data or not all(key in data for key in ['call_sign', 'latitude', 'longitude']):
             return jsonify({'error': 'Missing required fields'}), 400
-        
-        new_unit = GroundUnit(
-            call_sign=data['call_sign'],
-            current_latitude=data['latitude'],
-            current_longitude=data['longitude']
-        )
+        new_unit = GroundUnit(call_sign=data['call_sign'], current_latitude=data['latitude'], current_longitude=data['longitude'])
         db.session.add(new_unit)
         db.session.commit()
-        
-        return jsonify({
-            'id': new_unit.id,
-            'call_sign': new_unit.call_sign,
-            'status': new_unit.status
-        }), 201
-
+        return jsonify({'id': new_unit.id, 'call_sign': new_unit.call_sign, 'status': new_unit.status}), 201
     if request.method == 'GET':
         units_list = GroundUnit.query.all()
         units_data = [{'id': u.id, 'call_sign': u.call_sign, 'status': u.status} for u in units_list]
         return jsonify(units_data)
 
-
-# --- Drone Endpoints ---
-# ... (Drone, Incident, and FlightPlan endpoints are here, no changes needed) ...
 @api.route('/drones', methods=['POST', 'GET'])
 @jwt_required()
 def handle_drones():
@@ -156,3 +133,9 @@ def get_flightplans():
     plans_list = FlightPlan.query.all()
     plans_data = [{'id': p.id, 'incident_id': p.incident_id, 'status': p.status, 'clearance_code': p.clearance_code} for p in plans_list]
     return jsonify(plans_data)
+
+@api.route('/analytics/hotspots', methods=['GET'])
+@jwt_required()
+def get_hotspots():
+    hotspots = calculate_hotspots()
+    return jsonify(hotspots)

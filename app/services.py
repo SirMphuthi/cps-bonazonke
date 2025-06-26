@@ -1,12 +1,28 @@
 from . import db
-from .models import Drone, Incident, FlightPlan
+from .models import Drone, Incident, FlightPlan, Station
 from .atc_service import request_airspace_clearance
+from geopy.distance import geodesic
+import math
+
+def find_closest_available_drone(incident_coords):
+    available_drones = Drone.query.filter_by(status='AVAILABLE').all()
+    if not available_drones:
+        return None
+
+    closest_drone = None
+    min_distance = float('inf')
+
+    for drone in available_drones:
+        drone_coords = (drone.current_latitude, drone.current_longitude)
+        distance = geodesic(drone_coords, incident_coords).kilometers
+        
+        if distance < min_distance:
+            min_distance = distance
+            closest_drone = drone
+            
+    return closest_drone
 
 def report_and_dispatch_drone(incident_data):
-    """
-    Main service function to handle a new incident report.
-    """
-    # Step 1: Create the Incident record
     new_incident = Incident(
         latitude=incident_data['latitude'],
         longitude=incident_data['longitude'],
@@ -15,42 +31,63 @@ def report_and_dispatch_drone(incident_data):
     )
     db.session.add(new_incident)
     
-    # Step 2: Find the first available drone
-    # A real system would calculate the closest, but this is good for now.
-    available_drone = Drone.query.filter_by(status='AVAILABLE').first()
+    incident_coords = (new_incident.latitude, new_incident.longitude)
+    closest_drone = find_closest_available_drone(incident_coords)
     
-    if not available_drone:
+    if not closest_drone:
         new_incident.status = 'NO_DRONES_AVAILABLE'
         db.session.commit()
-        print("DISPATCH SERVICE: No drones available.")
-        return new_incident # Return the incident with its updated status
+        return new_incident
 
-    print(f"DISPATCH SERVICE: Found available drone: {available_drone.id}")
     new_incident.status = 'AWAITING_AIRSPACE_CLEARANCE'
 
-    # Step 3: Create a Flight Plan for submission
     new_flight_plan = FlightPlan(incident=new_incident)
-    new_flight_plan.drones.append(available_drone) # Associate the drone with the flight plan
+    new_flight_plan.drones.append(closest_drone)
     db.session.add(new_flight_plan)
     
-    # Step 4: Request Airspace Clearance from mock ATC service
     flight_plan_data = {
-        "drone_id": available_drone.id,
-        "incident_location": (new_incident.latitude, new_incident.longitude)
+        "drone_id": closest_drone.id,
+        "incident_location": incident_coords
     }
     atc_response = request_airspace_clearance(flight_plan_data)
     
-    # Step 5: Handle ATC Response
     if atc_response['status'] == 'APPROVED':
-        print(f"DISPATCH SERVICE: ATC Approved. Dispatching drone.")
         new_flight_plan.status = 'APPROVED'
         new_flight_plan.clearance_code = atc_response['clearance_code']
-        available_drone.status = 'IN_TRANSIT'
+        closest_drone.status = 'IN_TRANSIT'
         new_incident.status = 'DRONE_DISPATCHED'
     else:
-        print(f"DISPATCH SERVICE: ATC Rejected. Drone cannot be dispatched.")
         new_flight_plan.status = 'REJECTED'
         new_incident.status = 'AIRSPACE_RESTRICTED'
     
     db.session.commit()
     return new_incident
+
+def calculate_hotspots(grid_size=0.5):
+    incidents = Incident.query.all()
+    if not incidents:
+        return []
+
+    grid = {}
+
+    for incident in incidents:
+        lat_key = round(incident.latitude / grid_size) * grid_size
+        lon_key = round(incident.longitude / grid_size) * grid_size
+        grid_key = (lat_key, lon_key)
+        
+        if grid_key not in grid:
+            grid[grid_key] = 0
+        grid[grid_key] += 1
+    
+    hotspots = []
+    for key, count in grid.items():
+        if count > 2:
+            hotspots.append({
+                "latitude": key[0],
+                "longitude": key[1],
+                "incident_count": count
+            })
+            
+    sorted_hotspots = sorted(hotspots, key=lambda x: x['incident_count'], reverse=True)
+    
+    return sorted_hotspots[:5]
