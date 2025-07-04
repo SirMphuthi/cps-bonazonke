@@ -119,7 +119,7 @@ Replace <COPIED_TOKEN> with the actual token you copied
 TOKEN="<COPIED_TOKEN>"
 ```
 
-# Now, use the token to test the analytics endpoint
+### Now, use the token to test the analytics endpoint
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" [http://127.0.0.1:5000/api/analytics/hotspots](http://127.0.0.1:5000/api/analytics/hotspots)
