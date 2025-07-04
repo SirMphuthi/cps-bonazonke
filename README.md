@@ -106,38 +106,37 @@ curl -X POST [http://127.0.0.1:5000/api/login](http://127.0.0.1:5000/api/login) 
     "username": "operator1",
     "password": "password123"
 }'
-
----
+```
 
 This will return an access_token. Copy the long string of characters inside the quotes.
 
-Step 2: Test a Protected Endpoint
+### Step 2: Test a Protected Endpoint
+
 Store the token in a shell variable and use it to access a protected route.
 
-Bash
-
-# Replace <COPIED_TOKEN> with the actual token you copied
+```bash
+Replace <COPIED_TOKEN> with the actual token you copied
 TOKEN="<COPIED_TOKEN>"
+```
 
 # Now, use the token to test the analytics endpoint
 curl -H "Authorization: Bearer $TOKEN" [http://127.0.0.1:5000/api/analytics/hotspots](http://127.0.0.1:5000/api/analytics/hotspots)
-6. Live API Documentation via ngrok
+
+### 6. Live API Documentation via ngrok
+
 To view the interactive API documentation from an external browser, a secure tunnel is required. I have included ngrok in this project for that purpose.
 
 One-Time ngrok Setup
 Download ngrok:
 
-Bash
+```bash
 
 curl -L [https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz](https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz) --output ngrok-v3.tgz
 Extract the file:
 
-Bash
-
 tar -xvzf ngrok-v3.tgz
 Authenticate ngrok: Sign up for a free account at ngrok.com to get your authtoken.
-
-Bash
+```
 
 # Replace <YOUR_NGROK_AUTHTOKEN> with the token from your ngrok dashboard
 ./ngrok config add-authtoken <YOUR_NGROK_AUTHTOKEN>
@@ -146,16 +145,16 @@ Start the Flask Server in Terminal 1 (as described in the daily workflow).
 
 In a second terminal, start the ngrok tunnel:
 
-Bash
-
+```bash
 ./ngrok http 5000
 Copy the public https URL provided by ngrok (it will look like https://random-string.ngrok-free.app).
 
 Open your browser and navigate to that URL, adding /apidocs to the end.
 
 Example: https://your-ngrok-url.ngrok-free.app/apidocs
-
+```
 This will load the full, interactive Swagger UI documentation for all API endpoints.
+
 ## Copyright & License
 
 © 2025 Kgotso Mphuthi. All Rights Reserved.
