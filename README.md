@@ -135,13 +135,15 @@ Download ngrok:
 ```bash
 
 curl -L [https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz](https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz) --output ngrok-v3.tgz
-Extract the file:
 
+Extract the file:
 tar -xvzf ngrok-v3.tgz
+
 Authenticate ngrok: Sign up for a free account at ngrok.com to get your authtoken.
 ```
 
-# Replace <YOUR_NGROK_AUTHTOKEN> with the token from your ngrok dashboard
+### Replace <YOUR_NGROK_AUTHTOKEN> with the token from your ngrok dashboard
+
 ./ngrok config add-authtoken <YOUR_NGROK_AUTHTOKEN>
 Running ngrok for Demonstration
 Start the Flask Server in Terminal 1 (as described in the daily workflow).
