@@ -1,0 +1,23 @@
+# .gitpod.yml - Configuration for the Gitpod Cloud Development Environment
+
+tasks:
+  - name: Setup & Run Application
+    init: |
+      # This part runs only once, when the workspace is first created.
+      # It sets up the Python virtual environment and installs all dependencies.
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install -r requirements.txt
+      # Create the database
+      flask db init
+      flask db migrate -m "Initial migration"
+      flask db upgrade
+      # Seed the database with initial data
+      python3 seed.py
+    command: |
+      # This part runs every time you start or restart the workspace.
+      # It activates the environment and starts the Flask server.
+      source venv/bin/activate
+      export FLASK_APP=run.py
+      flask run
+
