@@ -49,3 +49,5 @@ urllib3==1.26.9
 Werkzeug==2.2.3
 Flask-JWT-Extended
 zipp==3.7.0
+geopy==2.4.1
+pyngrok==6.0.0

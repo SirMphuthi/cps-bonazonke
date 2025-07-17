@@ -1,10 +1,26 @@
-from flask import Blueprint, request, jsonify
+# app/routes.py
+from flask import Blueprint, request, jsonify, render_template # <-- Add render_template here
 from .models import Station, Drone, User, Incident, FlightPlan, GroundUnit, db
 from .services import report_and_dispatch_drone, calculate_hotspots
 from flask_jwt_extended import create_access_token, jwt_required
 
+# --- NEW BLUEPRINT FOR FRONTEND ---
+main = Blueprint('main', __name__)
+
+@main.route('/')
+def index():
+    """
+    This is the main route that serves the frontend application.
+    It renders the index.html file from the 'templates' folder.
+    """
+    return render_template('index.html')
+# ------------------------------------
+
+
+# --- EXISTING API BLUEPRINT ---
 api = Blueprint('api', __name__, url_prefix='/api')
 
+# ... (all of your existing @api.route(...) code remains here, unchanged) ...
 
 @api.route('/users', methods=['POST'])
 def create_user():

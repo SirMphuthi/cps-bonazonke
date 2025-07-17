@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoshTech Industries - CPS Dashboard</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Link to your external CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body class="h-screen overflow-hidden bg-gray-100">
+
+    <!-- Landing Page Container -->
+    <div id="landing-page-container" class="bg-image w-full h-full">
+        <div class="bg-overlay w-full h-screen flex flex-col items-center justify-center text-white text-center p-4">
+            <div class="mb-4">
+                <i class="fas fa-shield-halved text-6xl text-blue-500"></i>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-2">Hello & Welcome</h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-8">to RoshTech Industries</p>
+            <p class="max-w-2xl mb-10 text-gray-400">
+                You are accessing the Community Protection Service (CPS) #Bonazonke command center. This is a restricted system for authorized personnel only.
+            </p>
+            <button id="show-login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">
+                Operator Login
+            </button>
+            <footer class="absolute bottom-4 text-xs text-gray-500">
+                © 2025 RoshTech Industries. All Rights Reserved.
+            </footer>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Container (Initially Hidden) -->
+    <div id="dashboard-container" class="hidden flex w-full h-full">
+        <!-- Left Navigation Sidebar -->
+        <nav class="w-20 bg-gray-800 text-white flex flex-col items-center py-4 space-y-6">
+            <div class="mb-4">
+                 <i class="fas fa-shield-halved text-3xl text-blue-500"></i>
+            </div>
+            <a href="#" id="nav-dashboard" class="nav-item p-4 rounded-lg active" title="Live Dashboard">
+                <i class="fas fa-map-marked-alt fa-2x"></i>
+            </a>
+            <a href="#" id="nav-history" class="nav-item p-4 rounded-lg hover:bg-gray-700" title="Incident History">
+                <i class="fas fa-history fa-2x"></i>
+            </a>
+            <a href="#" id="nav-analytics" class="nav-item p-4 rounded-lg hover:bg-gray-700" title="Analytics">
+                <i class="fas fa-chart-line fa-2x"></i>
+            </a>
+            <a href="#" id="nav-maintenance" class="nav-item p-4 rounded-lg hover:bg-gray-700" title="System Health">
+                <i class="fas fa-tools fa-2x"></i>
+            </a>
+            <a href="#" id="nav-profile" class="nav-item p-4 rounded-lg hover:bg-gray-700 mt-auto" title="Pilot Profile">
+                <i class="fas fa-user-astronaut fa-2x"></i>
+            </a>
+        </nav>
+
+        <!-- Main Application Wrapper -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 p-3 flex justify-between items-center z-20">
+                <!-- Left Group -->
+                <div class="flex-1 flex items-center space-x-6">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-shield-halved text-2xl text-blue-600"></i>
+                        <div>
+                            <h1 class="text-lg font-bold text-gray-800">RoshTech Industries</h1>
+                            <p class="text-xs text-gray-500">CPS #Bonazonke - See the future</p>
+                        </div>
+                    </div>
+                     <div class="text-left border-l-2 pl-6">
+                        <p class="text-sm font-medium text-gray-900" id="currentUser">operator1</p>
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span id="currentStation">Offline</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Center Group -->
+                <div class="flex-1 flex justify-center">
+                     <div id="weather-display" class="text-left flex items-center space-x-3 p-2 bg-gray-100 rounded-lg">
+                        <i id="weather-icon" class="fas fa-sun text-yellow-400 text-2xl"></i>
+                        <span id="weather-desc" class="font-semibold text-gray-700">Clear Skies</span>
+                        <span class="text-gray-300">|</span>
+                        <span id="weather-temp" class="font-bold text-gray-800"></span>
+                        <span class="text-gray-300">|</span>
+                        <span class="text-sm text-gray-500 flex items-center"><i class="fas fa-wind mr-1"></i><span id="weather-wind"></span></span>
+                        <span class="text-gray-300">|</span>
+                        <span class="text-sm text-gray-500 flex items-center"><i class="fas fa-cloud-rain mr-1"></i><span id="weather-rain"></span></span>
+                    </div>
+                </div>
+
+                <!-- Right Group -->
+                <div class="flex-1 flex justify-end">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right font-mono">
+                            <div id="live-time" class="text-lg font-bold text-gray-800"></div>
+                            <div id="live-date" class="text-xs text-gray-500"></div>
+                        </div>
+                        <div id="action-buttons" class="border-l-2 pl-4 ml-2">
+                            <button id="deployPatrolBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md mb-1">
+                                <i class="fas fa-binoculars mr-2"></i>Deploy Patrol
+                            </button>
+                            <button id="reportIncidentBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                                <i class="fas fa-bullhorn mr-2"></i>Report Incident
+                            </button>
+                        </div>
+                        <div class="border-l-2 pl-4 ml-2">
+                            <button id="logoutBtn" class="text-gray-500 hover:text-red-600" title="Logout">
+                                <i class="fas fa-sign-out-alt fa-2x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- View Containers -->
+            <div id="dashboard-view" class="flex flex-1 overflow-hidden">
+                <main id="map" class="flex-1 z-10"></main>
+                <aside class="w-96 bg-white border-l border-gray-200 flex flex-col p-4 overflow-y-auto">
+                    <div id="flight-plan-panel" class="mb-6">
+                        <h2 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-200 pb-2">Flight Plan Status</h2>
+                        <div id="flight-plan-list" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-200 pb-2">Active Incidents</h2>
+                        <div id="incident-list" class="space-y-3"></div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h2 class="text-xl font-bold mb-4 text-gray-800">Unit Status</h2>
+                        <div id="unit-list" class="space-y-3"></div>
+                    </div>
+                </aside>
+            </div>
+
+            <div id="history-view" class="p-8 hidden flex-1 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">Incident History</h1>
+                <div class="mb-4">
+                    <input type="search" id="history-search" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Search by description...">
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <table class="w-full text-left">
+                        <thead class="border-b-2 border-gray-200">
+                            <tr>
+                                <th class="p-2">Incident ID</th>
+                                <th class="p-2">Description</th>
+                                <th class="p-2">Operator</th>
+                                <th class="p-2">Final Status</th>
+                                <th class="p-2">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="analytics-view" class="p-8 hidden flex-1 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">System Analytics</h1>
+            </div>
+
+            <div id="maintenance-view" class="p-8 hidden flex-1 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">Drone Maintenance Tracker</h1>
+            </div>
+
+            <div id="profile-view" class="p-8 hidden flex-1 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">Operator Profile</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="loginModal" class="fixed inset-0 bg-image flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 bg-opacity-75 p-8 rounded-lg shadow-2xl w-full max-w-sm border border-gray-700 text-white">
+            <h2 class="text-2xl font-bold text-center mb-6">CPS Operator Login</h2>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium mb-1 text-gray-300">Username</label>
+                    <input type="text" id="username" value="operator1" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium mb-1 text-gray-300">Password</label>
+                    <input type="password" id="password" value="password123" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-2 rounded-lg">Login</button>
+                <p id="loginError" class="text-red-500 text-xs mt-4 text-center"></p>
+            </form>
+        </div>
+    </div>
+    <div id="incidentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Report New Incident</h2>
+            <form id="incidentForm">
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium mb-1 text-gray-700">Description</label>
+                    <input type="text" id="description" placeholder="e.g., Robbery in progress" class="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2" required>
+                </div>
+                <div class="mb-6">
+                    <label for="address" class="block text-sm font-medium mb-1 text-gray-700">Incident Address</label>
+                    <input type="text" id="address" placeholder="e.g., 8115 Vilakazi Street, Soweto" class="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2" required>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelIncidentBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="videoFeedModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-4 rounded-lg shadow-2xl w-full max-w-4xl border border-gray-200 flex flex-col">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-xl font-bold text-gray-800" id="videoFeedTitle"></h2>
+                <button id="closeVideoFeedBtn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div class="flex space-x-4">
+                <div class="flex-1 bg-black aspect-video flex items-center justify-center rounded-md">
+                    <img src="https://i.gifer.com/origin/d7/d763594b54582f35a12272d1f7e34151_w200.gif" alt="Live Feed Simulation">
+                </div>
+                <div class="w-64 bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-lg mb-4 text-gray-800">Drone Telemetry</h3>
+                        <div id="telemetryData" class="space-y-2 text-sm text-gray-700"></div>
+                    </div>
+                    <div class="space-y-2 mt-4">
+                        <button id="returnToBaseBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Return to Base</button>
+                        <button id="endMissionBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">End Mission</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="patrolModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Deploy Proactive Patrol</h2>
+            <form id="patrolForm">
+                <div class="mb-4">
+                    <label for="patrolZone" class="block text-sm font-medium mb-1 text-gray-700">1. Select High-Risk Zone</label>
+                    <select id="patrolZone" class="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="">-- Please select a zone --</option>
+                        <option value="orlando">Orlando East Hotspot</option>
+                        <option value="sandton">Sandton CBD Hotspot</option>
+                    </select>
+                </div>
+                <div id="drone-selection-panel" class="mb-6 hidden">
+                    <label class="block text-sm font-medium mb-1 text-gray-700">2. Select Available Drone</label>
+                    <div id="drone-options-list" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-gray-50 rounded-lg border"></div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelPatrolBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" id="submitPatrolBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg" disabled>Deploy Patrol</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="confirmLogoutModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Confirm Logout</h2>
+            <p class="text-gray-600 mb-6">Are you sure you want to logout?</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelLogoutBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">No</button>
+                <button id="confirmLogoutBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to your external JS file -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

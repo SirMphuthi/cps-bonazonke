@@ -1,30 +1,21 @@
-version: '3.8'
+version: '3.3'
 
 services:
   web:
     build: .
-    command: flask run --host=0.0.0.0
     ports:
       - "5000:5000"
     volumes:
-      - .:/cps-bonazonke
+      - .:/app
     environment:
       - FLASK_APP=run.py
       - FLASK_DEBUG=1
-      - DATABASE_URL=postgresql://cps_user:password@db/cps_db
-    depends_on:
-      - db
+      - DATABASE_URL=sqlite:////app/cps_bonazonke.db
 
-  db:
-    image: postgres:13-alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_USER=cps_user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=cps_db
+  ngrok:
+    image: ngrok/ngrok:latest
     ports:
-      - "5432:5432"
-
-volumes:
-  postgres_data:
+      - "4040:4040"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http web:5000

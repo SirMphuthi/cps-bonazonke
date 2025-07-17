@@ -5,13 +5,19 @@ from flask_migrate import Migrate
 from flasgger import Swagger
 from .config import Config
 from flask_jwt_extended import JWTManager
+import os
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    # When creating the app, we specify the location of the static and templates folders.
+    # This is the crucial fix.
+    app = Flask(__name__,
+                template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'templates'),
+                static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static'))
+                
     app.config.from_object(config_class)
 
     db.init_app(app)
@@ -19,11 +25,12 @@ def create_app(config_class=Config):
     Swagger(app)
     jwt.init_app(app)
 
-    from .routes import api as api_blueprint
+    # Import and register both blueprints
+    from .routes import main as main_blueprint, api as api_blueprint
+    app.register_blueprint(main_blueprint)
     app.register_blueprint(api_blueprint)
-    
-    # --- ADD THIS LINE ---
+
     from . import models
-    # ---------------------
 
     return app
+

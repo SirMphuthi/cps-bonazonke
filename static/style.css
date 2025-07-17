@@ -1,0 +1,82 @@
+/* Base Light Mode Variables */
+:root {
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f8f9fa;
+    --text-primary: #1c1e21;
+    --text-secondary: #65676b;
+    --border-color: #d1d5db;
+}
+
+/* Dark Mode Variables */
+body.dark {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #222831;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --border-color: #30363d;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.bg-theme-primary { background-color: var(--bg-primary); }
+.bg-theme-secondary { background-color: var(--bg-secondary); }
+.bg-theme-tertiary { background-color: var(--bg-tertiary); }
+.text-theme-primary { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+.border-theme { border-color: var(--border-color); }
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+.leaflet-tooltip {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    box-shadow: 0 0 5px, 0 0 10px;
+}
+.status-available { background-color: #28a745; box-shadow: 0 0 5px #28a745, 0 0 10px #28a745; }
+.status-en-route, .status-patrolling { background-color: #ffc107; box-shadow: 0 0 5px #ffc107, 0 0 10px #ffc107; }
+.status-on-scene { background-color: #dc3545; box-shadow: 0 0 5px #dc3545, 0 0 10px #dc3545; }
+.status-returning { background-color: #17a2b8; box-shadow: 0 0 5px #17a2b8, 0 0 10px #17a2b8; }
+.status-reported, .status-awaiting-clearance { background-color: #f8d7da; color: #721c24; }
+.status-dispatched { background-color: #fff3cd; color: #856404; }
+.status-resolved { background-color: #d4edda; color: #155724; }
+#incident-list > div, .unit-item-clickable {
+    transition: background-color 0.2s ease-in-out;
+    cursor: pointer;
+}
+#incident-list > div:hover, .unit-item-clickable:hover {
+    background-color: var(--bg-tertiary);
+}
+.nav-item.active {
+    background-color: #2563eb;
+    color: white;
+}
+.drone-option.selected {
+    background-color: #dbeafe;
+    border-color: #2563eb;
+}
+.bg-image {
+    background-image: url('https://images.pexels.com/photos/442579/pexels-photo-442579.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2');
+    background-size: cover;
+    background-position: center;
+}
+.bg-overlay {
+    background-color: rgba(13, 17, 23, 0.7);
+}
+
