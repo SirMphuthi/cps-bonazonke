@@ -4,22 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoshTech Industries - CPS Dashboard</title>
-    
     <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Link to your external CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
+    <style>
+        :root {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #1c1e21;
+            --text-secondary: #65676b;
+            --border-color: #d1d5db;
+        }
+        body.dark {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #222831;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --border-color: #30363d;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .bg-theme-primary { background-color: var(--bg-primary); }
+        .bg-theme-secondary { background-color: var(--bg-secondary); }
+        .bg-theme-tertiary { background-color: var(--bg-tertiary); }
+        .text-theme-primary { color: var(--text-primary); }
+        .text-theme-secondary { color: var(--text-secondary); }
+        .border-theme { border-color: var(--border-color); }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        .leaflet-tooltip {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 5px, 0 0 10px;
+        }
+        .status-available { background-color: #28a745; box-shadow: 0 0 5px #28a745, 0 0 10px #28a745; }
+        .status-en-route, .status-patrolling { background-color: #ffc107; box-shadow: 0 0 5px #ffc107, 0 0 10px #ffc107; }
+        .status-on-scene { background-color: #dc3545; box-shadow: 0 0 5px #dc3545, 0 0 10px #dc3545; }
+        .status-returning { background-color: #17a2b8; box-shadow: 0 0 5px #17a2b8, 0 0 10px #17a2b8; }
+        .status-reported, .status-awaiting-clearance { background-color: #f8d7da; color: #721c24; }
+        .status-dispatched { background-color: #fff3cd; color: #856404; }
+        .status-resolved { background-color: #d4edda; color: #155724; }
+        #incident-list > div, .unit-item-clickable {
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        #incident-list > div:hover, .unit-item-clickable:hover {
+            background-color: var(--bg-tertiary);
+        }
+        .nav-item.active {
+            background-color: #2563eb;
+            color: white;
+        }
+        .drone-option.selected {
+            background-color: #dbeafe;
+            border-color: #2563eb;
+        }
+        .bg-image {
+            background-image: url('https://images.pexels.com/photos/442579/pexels-photo-442579.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2');
+            background-size: cover;
+            background-position: center;
+        }
+        .bg-overlay {
+            background-color: rgba(13, 17, 23, 0.7);
+        }
+    </style>
 </head>
-<body class="h-screen overflow-hidden bg-gray-100">
+<body class="h-screen overflow-hidden">
 
-    <!-- Landing Page Container -->
-    <div id="landing-page-container" class="bg-image w-full h-full">
-        <div class="bg-overlay w-full h-screen flex flex-col items-center justify-center text-white text-center p-4">
+    <!-- Landing Page -->
+    <div id="landing-page-container" class="bg-image w-full h-full absolute inset-0">
+        <div class="bg-overlay w-full h-full flex flex-col items-center justify-center text-white text-center p-4">
             <div class="mb-4">
                 <i class="fas fa-shield-halved text-6xl text-blue-500"></i>
             </div>
@@ -34,6 +106,21 @@
             <footer class="absolute bottom-4 text-xs text-gray-500">
                 © 2025 RoshTech Industries. All Rights Reserved.
             </footer>
+        </div>
+    </div>
+
+    <!-- Login Modal (with background image and overlay) -->
+    <div id="loginModal" class="fixed inset-0 z-50 hidden">
+        <div class="bg-image w-full h-full absolute inset-0"></div>
+        <div class="bg-overlay w-full h-full absolute inset-0"></div>
+        <div class="relative flex items-center justify-center h-full z-10">
+            <form id="loginForm" class="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800 text-center">Operator Login</h2>
+                <input id="username" name="username" placeholder="Username" value="operator1" class="block w-full mb-3 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300">
+                <input id="password" name="password" type="password" placeholder="Password" value="password123" class="block w-full mb-3 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Login</button>
+                <div id="loginError" style="color:red" class="mt-2 text-center"></div>
+            </form>
         </div>
     </div>
 
@@ -56,27 +143,32 @@
             <a href="#" id="nav-maintenance" class="nav-item p-4 rounded-lg hover:bg-gray-700" title="System Health">
                 <i class="fas fa-tools fa-2x"></i>
             </a>
-            <a href="#" id="nav-profile" class="nav-item p-4 rounded-lg hover:bg-gray-700 mt-auto" title="Pilot Profile">
-                <i class="fas fa-user-astronaut fa-2x"></i>
-            </a>
+            <div class="mt-auto flex flex-col items-center space-y-6">
+                 <a href="#" id="nav-profile" class="nav-item p-4 rounded-lg hover:bg-gray-700" title="Pilot Profile">
+                    <i class="fas fa-user-astronaut fa-2x"></i>
+                </a>
+                <a href="#" id="nav-settings" class="nav-item p-4 rounded-lg hover:bg-gray-700" title="Settings">
+                    <i class="fas fa-cog fa-2x"></i>
+                </a>
+            </div>
         </nav>
 
         <!-- Main Application Wrapper -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col bg-theme-primary text-theme-primary">
             <!-- Header -->
-            <header class="bg-white border-b border-gray-200 p-3 flex justify-between items-center z-20">
+            <header class="bg-theme-secondary border-b border-theme p-3 flex justify-between items-center z-20">
                 <!-- Left Group -->
                 <div class="flex-1 flex items-center space-x-6">
                     <div class="flex items-center space-x-3">
                         <i class="fas fa-shield-halved text-2xl text-blue-600"></i>
                         <div>
-                            <h1 class="text-lg font-bold text-gray-800">RoshTech Industries</h1>
-                            <p class="text-xs text-gray-500">CPS #Bonazonke - See the future</p>
+                            <h1 class="text-lg font-bold text-theme-primary">RoshTech Industries</h1>
+                            <p class="text-xs text-theme-secondary">CPS #Bonazonke - See the future</p>
                         </div>
                     </div>
-                     <div class="text-left border-l-2 pl-6">
-                        <p class="text-sm font-medium text-gray-900" id="currentUser">operator1</p>
-                        <p class="text-xs text-gray-500">
+                     <div class="text-left border-l-2 pl-6 border-theme">
+                        <p class="text-sm font-medium text-theme-primary" id="currentUser">operator1</p>
+                        <p class="text-xs text-theme-secondary">
                             <i class="fas fa-map-marker-alt mr-1"></i>
                             <span id="currentStation">Offline</span>
                         </p>
@@ -85,15 +177,15 @@
 
                 <!-- Center Group -->
                 <div class="flex-1 flex justify-center">
-                     <div id="weather-display" class="text-left flex items-center space-x-3 p-2 bg-gray-100 rounded-lg">
+                     <div id="weather-display" class="text-left flex items-center space-x-3 p-2 bg-theme-tertiary rounded-lg border border-theme">
                         <i id="weather-icon" class="fas fa-sun text-yellow-400 text-2xl"></i>
-                        <span id="weather-desc" class="font-semibold text-gray-700">Clear Skies</span>
+                        <span id="weather-desc" class="font-semibold text-theme-secondary">Clear Skies</span>
                         <span class="text-gray-300">|</span>
-                        <span id="weather-temp" class="font-bold text-gray-800"></span>
+                        <span id="weather-temp" class="font-bold text-theme-primary"></span>
                         <span class="text-gray-300">|</span>
-                        <span class="text-sm text-gray-500 flex items-center"><i class="fas fa-wind mr-1"></i><span id="weather-wind"></span></span>
+                        <span class="text-sm text-theme-secondary flex items-center"><i class="fas fa-wind mr-1"></i><span id="weather-wind"></span></span>
                         <span class="text-gray-300">|</span>
-                        <span class="text-sm text-gray-500 flex items-center"><i class="fas fa-cloud-rain mr-1"></i><span id="weather-rain"></span></span>
+                        <span class="text-sm text-theme-secondary flex items-center"><i class="fas fa-cloud-rain mr-1"></i><span id="weather-rain"></span></span>
                     </div>
                 </div>
 
@@ -101,10 +193,10 @@
                 <div class="flex-1 flex justify-end">
                     <div class="flex items-center space-x-4">
                         <div class="text-right font-mono">
-                            <div id="live-time" class="text-lg font-bold text-gray-800"></div>
-                            <div id="live-date" class="text-xs text-gray-500"></div>
+                            <div id="live-time" class="text-lg font-bold text-theme-primary"></div>
+                            <div id="live-date" class="text-xs text-theme-secondary"></div>
                         </div>
-                        <div id="action-buttons" class="border-l-2 pl-4 ml-2">
+                        <div id="action-buttons" class="border-l-2 pl-4 ml-2 border-theme">
                             <button id="deployPatrolBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md mb-1">
                                 <i class="fas fa-binoculars mr-2"></i>Deploy Patrol
                             </button>
@@ -112,7 +204,7 @@
                                 <i class="fas fa-bullhorn mr-2"></i>Report Incident
                             </button>
                         </div>
-                        <div class="border-l-2 pl-4 ml-2">
+                        <div class="border-l-2 pl-4 ml-2 border-theme">
                             <button id="logoutBtn" class="text-gray-500 hover:text-red-600" title="Logout">
                                 <i class="fas fa-sign-out-alt fa-2x"></i>
                             </button>
@@ -124,30 +216,30 @@
             <!-- View Containers -->
             <div id="dashboard-view" class="flex flex-1 overflow-hidden">
                 <main id="map" class="flex-1 z-10"></main>
-                <aside class="w-96 bg-white border-l border-gray-200 flex flex-col p-4 overflow-y-auto">
+                <aside class="w-96 bg-theme-secondary border-l border-theme flex flex-col p-4 overflow-y-auto">
                     <div id="flight-plan-panel" class="mb-6">
-                        <h2 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-200 pb-2">Flight Plan Status</h2>
+                        <h2 class="text-xl font-bold mb-4 text-theme-primary border-b border-theme pb-2">Flight Plan Status</h2>
                         <div id="flight-plan-list" class="space-y-3"></div>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold mb-4 text-gray-800 border-b border-gray-200 pb-2">Active Incidents</h2>
+                        <h2 class="text-xl font-bold mb-4 text-theme-primary border-b border-theme pb-2">Active Incidents</h2>
                         <div id="incident-list" class="space-y-3"></div>
                     </div>
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h2 class="text-xl font-bold mb-4 text-gray-800">Unit Status</h2>
+                    <div class="mt-6 pt-6 border-t border-theme">
+                        <h2 class="text-xl font-bold mb-4 text-theme-primary">Unit Status</h2>
                         <div id="unit-list" class="space-y-3"></div>
                     </div>
                 </aside>
             </div>
 
             <div id="history-view" class="p-8 hidden flex-1 overflow-y-auto">
-                <h1 class="text-3xl font-bold text-gray-800 mb-6">Incident History</h1>
+                <h1 class="text-3xl font-bold text-theme-primary mb-6">Incident History</h1>
                 <div class="mb-4">
-                    <input type="search" id="history-search" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Search by description...">
+                    <input type="search" id="history-search" class="w-full p-2 border border-theme rounded-lg bg-theme-secondary" placeholder="Search by description...">
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-theme-secondary p-4 rounded-lg shadow-md">
                     <table class="w-full text-left">
-                        <thead class="border-b-2 border-gray-200">
+                        <thead class="border-b-2 border-theme">
                             <tr>
                                 <th class="p-2">Incident ID</th>
                                 <th class="p-2">Description</th>
@@ -160,39 +252,33 @@
                     </table>
                 </div>
             </div>
-
+            
             <div id="analytics-view" class="p-8 hidden flex-1 overflow-y-auto">
-                <h1 class="text-3xl font-bold text-gray-800 mb-6">System Analytics</h1>
+                <h1 class="text-3xl font-bold text-theme-primary mb-6">System Analytics</h1>
             </div>
-
             <div id="maintenance-view" class="p-8 hidden flex-1 overflow-y-auto">
-                <h1 class="text-3xl font-bold text-gray-800 mb-6">Drone Maintenance Tracker</h1>
+                <h1 class="text-3xl font-bold text-theme-primary mb-6">Drone Maintenance Tracker</h1>
             </div>
-
             <div id="profile-view" class="p-8 hidden flex-1 overflow-y-auto">
-                <h1 class="text-3xl font-bold text-gray-800 mb-6">Operator Profile</h1>
+                <h1 class="text-3xl font-bold text-theme-primary mb-6">Operator Profile</h1>
+            </div>
+            
+            <div id="settings-view" class="p-8 hidden flex-1 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-theme-primary mb-6">Settings</h1>
+                <div class="bg-theme-secondary p-6 rounded-lg shadow-md max-w-md">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg font-medium text-theme-primary">Dark Mode</span>
+                        <label for="theme-toggle" class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="theme-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="loginModal" class="fixed inset-0 bg-image flex items-center justify-center z-50 hidden">
-        <div class="bg-gray-900 bg-opacity-75 p-8 rounded-lg shadow-2xl w-full max-w-sm border border-gray-700 text-white">
-            <h2 class="text-2xl font-bold text-center mb-6">CPS Operator Login</h2>
-            <form id="loginForm">
-                <div class="mb-4">
-                    <label for="username" class="block text-sm font-medium mb-1 text-gray-300">Username</label>
-                    <input type="text" id="username" value="operator1" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                </div>
-                <div class="mb-6">
-                    <label for="password" class="block text-sm font-medium mb-1 text-gray-300">Password</label>
-                    <input type="password" id="password" value="password123" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-2 rounded-lg">Login</button>
-                <p id="loginError" class="text-red-500 text-xs mt-4 text-center"></p>
-            </form>
-        </div>
-    </div>
     <div id="incidentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md border border-gray-200">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Report New Incident</h2>
@@ -269,8 +355,523 @@
         </div>
     </div>
 
-    <!-- Link to your external JS file -->
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script>
+    // --- MOCK API & STATE MANAGEMENT ---
+    let MOCK_DB = {
+        stations: [
+            { id: 1, name: "Soweto Central Drone Hub", latitude: -26.2683, longitude: 27.8593 },
+            { id: 2, name: "Sandton City Command", latitude: -26.1076, longitude: 28.0567 },
+            { id: 3, name: "Rosebank Drone Port", latitude: -26.1467, longitude: 28.0423 }
+        ],
+        drones: [
+            { id: 1, station_id: 1, status: 'AVAILABLE', battery_level: 100, current_latitude: -26.2683, current_longitude: 27.8593 },
+            { id: 2, station_id: 1, status: 'AVAILABLE', battery_level: 100, current_latitude: -26.2683, current_longitude: 27.8593 },
+            { id: 3, station_id: 2, status: 'AVAILABLE', battery_level: 100, current_latitude: -26.1076, current_longitude: 28.0567 }
+        ],
+        ground_units: [
+            { id: 1, call_sign: 'JMPD-Alpha', status: 'AVAILABLE', current_latitude: -26.2683, current_longitude: 27.8593 },
+            { id: 2, call_sign: 'SAPS-Response-1', status: 'AVAILABLE', current_latitude: -26.1076, current_longitude: 28.0567 }
+        ],
+        incidents: [],
+        flight_plans: [],
+        users: [{ id: 1, username: 'operator1', password_hash: 'password123', assigned_station_id: 1 }]
+    };
+    const PATROL_ZONES = {
+        orlando: { latitude: -26.2708, longitude: 27.8550 },
+        sandton: { latitude: -26.1076, longitude: 28.0567 }
+    };
+    let LIVE_WEATHER = {
+        temp: 22,
+        description: "Clear Skies",
+        icon: "fa-sun text-yellow-400",
+        wind_speed: 15, // km/h
+        rain_chance: 5, // percentage
+        isSafe: true
+    };
+
+    let jwtToken = null;
+    let map;
+    let markers = {};
+    let activeModalDroneId = null; 
+    let renderInterval = null;
+    let lightMapLayer, darkMapLayer;
+
+    // --- All JS functions go here ---
+    function initMap() {
+        map = L.map('map').setView([-26.1715, 27.932], 11);
+        lightMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        });
+        darkMapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        });
+        
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            darkMapLayer.addTo(map);
+        } else {
+            lightMapLayer.addTo(map);
+        }
+    }
+    
+    function switchTheme() {
+        const isDark = document.body.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+        if (isDark) {
+            if (map.hasLayer(lightMapLayer)) {
+                map.removeLayer(lightMapLayer);
+            }
+            darkMapLayer.addTo(map);
+        } else {
+            if (map.hasLayer(darkMapLayer)) {
+                map.removeLayer(darkMapLayer);
+            }
+            lightMapLayer.addTo(map);
+        }
+    }
+    
+    function updateLiveTime() {
+        const timeEl = document.getElementById('live-time');
+        const dateEl = document.getElementById('live-date');
+        if (timeEl && dateEl) {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            timeEl.textContent = now.toLocaleTimeString('en-ZA', timeOptions);
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateEl.textContent = now.toLocaleDateString('en-ZA', dateOptions);
+        }
+    }
+
+    async function fetchLiveWeather() {
+        // IMPORTANT: Replace with your own free API key from openweathermap.org
+        const apiKey = 'c2a5a74d63da9964a9d9595565413643';
+        const lat = -26.2041;
+        const lon = 28.0473;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Weather data not available');
+            const data = await response.json();
+
+            LIVE_WEATHER.temp = Math.round(data.main.temp);
+            LIVE_WEATHER.description = data.weather[0].description.replace(/\b\w/g, l => l.toUpperCase());
+            LIVE_WEATHER.wind_speed = Math.round(data.wind.speed * 3.6);
+            LIVE_WEATHER.rain_chance = data.rain ? (data.rain['1h'] || 0) : 0;
+            LIVE_WEATHER.isSafe = LIVE_WEATHER.wind_speed < 40; // Example safety check
+
+            const weatherId = data.weather[0].id;
+            if (weatherId >= 200 && weatherId < 300) LIVE_WEATHER.icon = 'fa-cloud-bolt text-gray-500';
+            else if (weatherId >= 300 && weatherId < 600) LIVE_WEATHER.icon = 'fa-cloud-rain text-blue-400';
+            else if (weatherId >= 600 && weatherId < 700) LIVE_WEATHER.icon = 'fa-snowflake text-blue-300';
+            else if (weatherId >= 700 && weatherId < 800) LIVE_WEATHER.icon = 'fa-smog text-gray-400';
+            else if (weatherId === 800) LIVE_WEATHER.icon = 'fa-sun text-yellow-400';
+            else if (weatherId > 800) LIVE_WEATHER.icon = 'fa-cloud text-gray-400';
+
+        } catch (error) {
+            console.error("Failed to fetch live weather:", error);
+        }
+        updateWeatherUI();
+    }
+
+    function updateWeatherUI() {
+        document.getElementById('weather-icon').className = `fas ${LIVE_WEATHER.icon} text-3xl`;
+        document.getElementById('weather-desc').textContent = LIVE_WEATHER.description;
+        document.getElementById('weather-temp').textContent = `${LIVE_WEATHER.temp}°C`;
+        document.getElementById('weather-wind').textContent = `${LIVE_WEATHER.wind_speed} km/h`;
+        document.getElementById('weather-rain').textContent = `${LIVE_WEATHER.rain_chance}%`;
+    }
+
+    function renderAll() {
+        renderFlightPlans();
+        renderIncidents();
+        renderUnits();
+        renderMapMarkers();
+    }
+
+    function renderFlightPlans() {
+        const panel = document.getElementById('flight-plan-panel');
+        const list = document.getElementById('flight-plan-list');
+        const activePlans = MOCK_DB.flight_plans.filter(p => p.status !== 'CLOSED' && p.status !== 'REJECTED');
+        
+        panel.classList.remove('hidden');
+        list.innerHTML = '';
+
+        if (activePlans.length === 0) {
+            list.innerHTML = '<p class="text-theme-secondary text-sm">No active flight plans.</p>';
+            return;
+        }
+
+        activePlans.forEach(plan => {
+            let statusColor = 'text-yellow-500';
+            let icon = 'fa-clock animate-spin';
+            if (plan.status === 'APPROVED') {
+                statusColor = 'text-green-500';
+                icon = 'fa-check-circle';
+            }
+             if (plan.status === 'REJECTED') {
+                statusColor = 'text-red-500';
+                icon = 'fa-times-circle';
+            }
+            const missionType = plan.incident_id ? `Incident #${plan.incident_id}` : 'Patrol';
+            list.innerHTML += `<div class="bg-theme-tertiary p-3 rounded-lg border border-theme"><div class="flex justify-between items-center"><h3 class="font-bold text-theme-primary">Flight Plan #${plan.id}</h3><span class="font-bold ${statusColor}"><i class="fas ${icon} mr-1"></i>${plan.status}</span></div><p class="text-sm text-theme-secondary mt-1">For ${missionType} | Drone #${plan.drone_id}</p></div>`;
+        });
+    }
+
+    function renderIncidents() {
+        const list = document.getElementById('incident-list');
+        list.innerHTML = '';
+        const activeIncidents = MOCK_DB.incidents.filter(i => i.status !== 'RESOLVED');
+        if (activeIncidents.length === 0) {
+            list.innerHTML = '<p class="text-theme-secondary text-sm">No active incidents.</p>';
+            return;
+        }
+        activeIncidents.forEach(incident => {
+            const statusClass = `status-${incident.status.toLowerCase().replace(/_/g, '-')}`;
+            const item = document.createElement('div');
+            item.className = "bg-theme-tertiary p-3 rounded-lg border border-theme";
+            item.innerHTML = `<div class="flex justify-between items-center"><h3 class="font-bold text-theme-primary">Incident #${incident.id}</h3><span class="text-xs font-semibold px-2 py-1 rounded-full ${statusClass}">${incident.status}</span></div><p class="text-sm mt-1 text-theme-secondary">${incident.description}</p>`;
+            if (incident.status !== 'RESOLVED' && incident.assigned_drone_id) {
+                item.addEventListener('click', () => openDroneModal(incident.assigned_drone_id));
+            }
+            list.appendChild(item);
+        });
+    }
+
+    function renderUnits() {
+        const list = document.getElementById('unit-list');
+        list.innerHTML = '<div><h3 class="font-semibold text-theme-secondary mb-2">Drones</h3></div>';
+        MOCK_DB.drones.forEach(drone => {
+            const statusClass = `status-${drone.status.toLowerCase().replace(/_/g, '-')}`;
+            const droneItem = document.createElement('div');
+            droneItem.className = 'unit-item text-sm flex justify-between items-center text-theme-secondary p-1 rounded-md';
+            if (drone.status !== 'AVAILABLE') {
+                droneItem.classList.add('unit-item-clickable');
+                droneItem.addEventListener('click', () => openDroneModal(drone.id));
+            }
+            droneItem.innerHTML = `<span><i class="fas fa-helicopter mr-2"></i> Drone #${drone.id}</span><span><span class="status-dot ${statusClass}"></span>${drone.status}</span>`;
+            list.appendChild(droneItem);
+        });
+        list.innerHTML += '<div class="mt-4"><h3 class="font-semibold text-theme-secondary mb-2">Ground Units</h3></div>';
+        MOCK_DB.ground_units.forEach(unit => {
+            const statusClass = `status-${unit.status.toLowerCase().replace(/_/g, '-')}`;
+            list.innerHTML += `<div class="text-sm flex justify-between items-center text-theme-secondary"><span><i class="fas fa-car mr-2"></i> ${unit.call_sign}</span><span><span class="status-dot ${statusClass}"></span>${unit.status}</span></div>`;
+        });
+    }
+
+    function renderMapMarkers() {
+        Object.values(markers).forEach(marker => marker.remove());
+        markers = {};
+        const stationIcon = L.divIcon({ html: '<i class="fas fa-building text-blue-600 text-2xl"></i>', className: '', iconSize: [24, 24], iconAnchor: [12, 24] });
+        MOCK_DB.stations.forEach(s => {
+            markers[`station_${s.id}`] = L.marker([s.latitude, s.longitude], { icon: stationIcon }).addTo(map).bindTooltip(s.name);
+        });
+        MOCK_DB.drones.forEach(d => {
+            const color = d.status === 'AVAILABLE' ? 'text-green-600' : (d.status === 'RETURNING' ? 'text-blue-500' : 'text-yellow-500');
+            const droneIcon = L.divIcon({ html: `<i class="fas fa-helicopter ${color} text-xl fa-fade"></i>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+            markers[`drone_${d.id}`] = L.marker([d.current_latitude, d.current_longitude], { icon: droneIcon }).addTo(map).bindTooltip(`Drone #${d.id} (${d.status})`);
+        });
+        MOCK_DB.incidents.forEach(i => {
+            const color = i.status === 'RESOLVED' ? 'green' : 'red';
+            const incidentIcon = L.divIcon({ html: `<i class="fas fa-bullhorn text-${color}-500 text-2xl animate-pulse"></i>`, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+            markers[`incident_${i.id}`] = L.marker([i.latitude, i.longitude], { icon: incidentIcon }).addTo(map).bindPopup(`<b>Incident #${i.id}</b><br>${i.description}`);
+        });
+    }
+
+    function mockLogin(username, password) {
+        const user = MOCK_DB.users.find(u => u.username === username && u.password_hash === password);
+        if (user) {
+            const station = MOCK_DB.stations.find(s => s.id === user.assigned_station_id);
+            document.getElementById('currentStation').textContent = station ? station.name : 'Unassigned';
+            return Promise.resolve({ access_token: 'mock_jwt_token_for_demo' });
+        }
+        return Promise.reject({ error: 'Invalid credentials' });
+    }
+
+    function mockReportIncident(data) {
+        return new Promise(resolve => {
+            if (!LIVE_WEATHER.isSafe) {
+                alert("Cannot dispatch drone: Unsafe weather conditions.");
+                return resolve({error: "Weather hold"});
+            }
+            map.flyTo([data.latitude, data.longitude], 16);
+            setTimeout(() => map.invalidateSize(), 500);
+            const drone = findClosestAvailableDrone({latitude: data.latitude, longitude: data.longitude}, -1);
+            if (!drone) {
+                const noDroneIncident = { id: MOCK_DB.incidents.length + 1, status: 'NO_DRONES_AVAILABLE', ...data };
+                MOCK_DB.incidents.push(noDroneIncident);
+                resolve({ incident_id: noDroneIncident.id, incident_status: noDroneIncident.status });
+                return;
+            }
+            const newIncident = { id: MOCK_DB.incidents.length + 1, status: 'AWAITING_CLEARANCE', assigned_drone_id: drone.id, ...data };
+            MOCK_DB.incidents.push(newIncident);
+            const newFlightPlan = { id: MOCK_DB.flight_plans.length + 1, incident_id: newIncident.id, drone_id: drone.id, status: 'PENDING_APPROVAL' };
+            MOCK_DB.flight_plans.push(newFlightPlan);
+            setTimeout(() => {
+                const isApproved = Math.random() < 0.9;
+                if (isApproved) {
+                    newFlightPlan.status = 'APPROVED';
+                    newIncident.status = 'DISPATCHED';
+                    drone.status = 'EN_ROUTE';
+                    setTimeout(() => {
+                        drone.current_latitude = data.latitude + 0.001;
+                        drone.current_longitude = data.longitude + 0.001;
+                        drone.status = 'ON_SCENE';
+                    }, 5000);
+                } else {
+                    newFlightPlan.status = 'REJECTED';
+                    newIncident.status = 'AIRSPACE_RESTRICTED';
+                }
+                resolve({ incident_id: newIncident.id, incident_status: newIncident.status });
+            }, 3000);
+        });
+    }
+    
+    function mockDeployPatrol(zoneId, droneId) {
+        if (!LIVE_WEATHER.isSafe) {
+            alert("Cannot deploy patrol drone: Unsafe weather conditions.");
+            return;
+        }
+        const zoneCoords = PATROL_ZONES[zoneId];
+        const drone = MOCK_DB.drones.find(d => d.id === droneId);
+        if (!zoneCoords || !drone) return;
+
+        const flightPlan = { id: MOCK_DB.flight_plans.length + 1, incident_id: null, drone_id: drone.id, status: 'PENDING_APPROVAL' };
+        MOCK_DB.flight_plans.push(flightPlan);
+
+        setTimeout(() => {
+            flightPlan.status = 'APPROVED';
+            drone.status = 'PATROLLING';
+            map.flyTo([zoneCoords.latitude, zoneCoords.longitude], 14);
+            setTimeout(() => {
+                drone.current_latitude = zoneCoords.latitude;
+                drone.current_longitude = zoneCoords.longitude;
+            }, 4000);
+        }, 3000);
+    }
+
+    function findClosestAvailableDrone(targetCoords, droneToExcludeId) {
+        const availableDrones = MOCK_DB.drones.filter(d => d.status === 'AVAILABLE' && d.id !== droneToExcludeId);
+        if (availableDrones.length === 0) return null;
+        let closestDrone = null;
+        let minDistance = Infinity;
+        availableDrones.forEach(drone => {
+            const distance = L.latLng(targetCoords.latitude, targetCoords.longitude).distanceTo(L.latLng(drone.current_latitude, drone.current_longitude));
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestDrone = drone;
+            }
+        });
+        return closestDrone;
+    }
+
+    function openDroneModal(droneId) {
+        const drone = MOCK_DB.drones.find(d => d.id === droneId);
+        if (!drone) return;
+
+        const incident = MOCK_DB.incidents.find(i => i.assigned_drone_id === drone.id && i.status !== 'RESOLVED');
+        activeModalDroneId = drone.id; 
+
+        document.getElementById('videoFeedTitle').textContent = `Drone #${drone.id} Control`;
+        const telemetryDiv = document.getElementById('telemetryData');
+        telemetryDiv.innerHTML = `<p><strong>Status:</strong> <span class="font-bold text-yellow-500">${drone.status}</span></p><p><strong>Battery:</strong> ${drone.battery_level}%</p><p class="mt-2"><strong>Location:</strong></p><p class="text-xs">${drone.current_latitude.toFixed(4)}, ${drone.current_longitude.toFixed(4)}</p>`;
+        
+        document.getElementById('endMissionBtn').style.display = incident ? 'block' : 'none';
+        document.getElementById('videoFeedModal').classList.remove('hidden');
+    }
+
+    function returnDroneToBase() {
+        if (!activeModalDroneId) return;
+
+        const drone = MOCK_DB.drones.find(d => d.id === activeModalDroneId);
+        const station = MOCK_DB.stations.find(s => s.id === drone.station_id);
+        if (!drone || !station) return;
+        
+        const flightPlan = MOCK_DB.flight_plans.find(fp => fp.drone_id === drone.id && fp.status !== 'CLOSED');
+        if (flightPlan) flightPlan.status = 'CLOSED';
+
+        drone.status = 'RETURNING';
+        document.getElementById('videoFeedModal').classList.add('hidden');
+        setTimeout(() => {
+            drone.current_latitude = station.latitude;
+            drone.current_longitude = station.longitude;
+            drone.status = 'AVAILABLE';
+            activeModalDroneId = null;
+        }, 8000);
+    }
+
+    function endMission() {
+        if (!activeModalDroneId) return;
+        const incident = MOCK_DB.incidents.find(i => i.assigned_drone_id === activeModalDroneId && i.status !== 'RESOLVED');
+        if (incident) incident.status = 'RESOLVED';
+        
+        returnDroneToBase();
+    }
+
+    function switchView(viewId) {
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('history-view').classList.add('hidden');
+        document.getElementById('analytics-view').classList.add('hidden');
+        document.getElementById('maintenance-view').classList.add('hidden');
+        document.getElementById('profile-view').classList.add('hidden');
+        document.getElementById('settings-view').classList.add('hidden');
+        document.getElementById(viewId).classList.remove('hidden');
+
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.getElementById(`nav-${viewId.split('-')[0]}`).classList.add('active');
+        
+        const actionButtons = document.getElementById('action-buttons');
+        if (viewId === 'dashboard-view') {
+            actionButtons.classList.remove('hidden');
+            setTimeout(() => map.invalidateSize(), 1);
+        } else {
+            actionButtons.classList.add('hidden');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Login flow
+        const showLoginBtn = document.getElementById('show-login-btn');
+        const landingPage = document.getElementById('landing-page-container');
+        const loginModal = document.getElementById('loginModal');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const confirmLogoutModal = document.getElementById('confirmLogoutModal');
+
+        showLoginBtn.addEventListener('click', () => {
+            landingPage.style.display = 'none';
+            loginModal.classList.remove('hidden');
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            confirmLogoutModal.classList.remove('hidden');
+        });
+        
+        document.getElementById('cancelLogoutBtn').addEventListener('click', () => {
+            confirmLogoutModal.classList.add('hidden');
+        });
+
+        document.getElementById('confirmLogoutBtn').addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            mockLogin(loginForm.username.value, loginForm.password.value).then(() => {
+                loginModal.classList.add('hidden');
+                dashboardContainer.classList.remove('hidden');
+                renderAll();
+                if (renderInterval) clearInterval(renderInterval);
+                renderInterval = setInterval(renderAll, 1000);
+            }).catch(() => {
+                document.getElementById('loginError').textContent = 'Invalid credentials.';
+            });
+        });
+
+        // Dashboard JS
+        initMap();
+        updateLiveTime();
+        setInterval(updateLiveTime, 1000);
+        fetchLiveWeather();
+        setInterval(fetchLiveWeather, 900000); // Update weather every 15 minutes
+
+        const incidentForm = document.getElementById('incidentForm');
+        document.getElementById('reportIncidentBtn').addEventListener('click', () => {
+            incidentModal.classList.remove('hidden');
+        });
+        document.getElementById('cancelIncidentBtn').addEventListener('click', () => incidentModal.classList.add('hidden'));
+        
+        incidentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const incidentData = {
+                description: document.getElementById('description').value,
+                address: document.getElementById('address').value,
+                // For this demo, we'll use a hardcoded coordinate for any address entered.
+                // A real app would get these from a geocoding API.
+                latitude: -26.2041,
+                longitude: 28.0473,
+                reporter_id: 1
+            };
+            mockReportIncident(incidentData).then(() => {
+                document.getElementById('incidentModal').classList.add('hidden');
+                incidentForm.reset();
+            });
+        });
+
+        document.getElementById('closeVideoFeedBtn').addEventListener('click', () => {
+            document.getElementById('videoFeedModal').classList.add('hidden');
+            activeModalDroneId = null;
+        });
+        document.getElementById('returnToBaseBtn').addEventListener('click', returnDroneToBase);
+        document.getElementById('endMissionBtn').addEventListener('click', endMission);
+
+        document.getElementById('nav-dashboard').addEventListener('click', () => switchView('dashboard-view'));
+        document.getElementById('nav-history').addEventListener('click', () => switchView('history-view'));
+        document.getElementById('nav-analytics').addEventListener('click', () => switchView('analytics-view'));
+        document.getElementById('nav-maintenance').addEventListener('click', () => switchView('maintenance-view'));
+        document.getElementById('nav-profile').addEventListener('click', () => switchView('profile-view'));
+        document.getElementById('nav-settings').addEventListener('click', () => {
+            switchView('settings-view');
+            const themeToggle = document.getElementById('theme-toggle');
+            if (localStorage.getItem('theme') === 'dark') {
+                themeToggle.checked = true;
+            }
+            themeToggle.addEventListener('change', switchTheme);
+        });
+        
+        const patrolModal = document.getElementById('patrolModal');
+        const patrolZoneSelect = document.getElementById('patrolZone');
+        const droneSelectionPanel = document.getElementById('drone-selection-panel');
+        const droneOptionsList = document.getElementById('drone-options-list');
+        const submitPatrolBtn = document.getElementById('submitPatrolBtn');
+
+        document.getElementById('deployPatrolBtn').addEventListener('click', () => patrolModal.classList.remove('hidden'));
+        document.getElementById('cancelPatrolBtn').addEventListener('click', () => patrolModal.classList.add('hidden'));
+        
+        patrolZoneSelect.addEventListener('change', () => {
+            const zoneId = patrolZoneSelect.value;
+            droneOptionsList.innerHTML = '';
+            submitPatrolBtn.disabled = true;
+            if (!zoneId) {
+                droneSelectionPanel.classList.add('hidden');
+                return;
+            }
+            const zoneCoords = PATROL_ZONES[zoneId];
+            const drones = MOCK_DB.drones.filter(d => d.status === 'AVAILABLE');
+            if (drones.length > 0) {
+                drones.forEach(drone => {
+                    const distance = L.latLng(zoneCoords.latitude, zoneCoords.longitude).distanceTo(L.latLng(drone.current_latitude, drone.current_longitude)) / 1000;
+                    const option = document.createElement('div');
+                    option.className = 'drone-option p-2 border rounded-md cursor-pointer hover:bg-gray-100';
+                    option.dataset.droneId = drone.id;
+                    option.innerHTML = `<strong>Drone #${drone.id}</strong> - ${distance.toFixed(1)} km away`;
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.drone-option').forEach(el => el.classList.remove('selected'));
+                        option.classList.add('selected');
+                        submitPatrolBtn.disabled = false;
+                    });
+                    droneOptionsList.appendChild(option);
+                });
+            } else {
+                droneOptionsList.innerHTML = '<p class="text-sm text-gray-500">No available drones.</p>';
+            }
+            droneSelectionPanel.classList.remove('hidden');
+        });
+
+        document.getElementById('patrolForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedDroneEl = document.querySelector('.drone-option.selected');
+            if (selectedDroneEl) {
+                const droneId = parseInt(selectedDroneEl.dataset.droneId);
+                const selectedZone = patrolZoneSelect.value;
+                mockDeployPatrol(selectedZone, droneId);
+                patrolModal.classList.add('hidden');
+            }
+        });
+    });
+    </script>
 </body>
 </html>
-

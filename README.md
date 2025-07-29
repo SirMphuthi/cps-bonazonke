@@ -12,6 +12,7 @@ Community Protection Service (CPS) is a real-world emergency response and analyt
 The system coordinates automated surveillance drones and ground units, providing both reactive incident response and proactive crime hotspot analysis. CPS is now evolving to include live data integration (e.g., weather) and a desktop app powered by Electron for seamless daily use.
 
 
+
 ## 2. Features
 
 - **Intelligent Asset Dispatch:** Geospatial calculations (`geopy`) to dispatch the closest drone to incidents.
@@ -19,6 +20,7 @@ The system coordinates automated surveillance drones and ground units, providing
 - **Secure, Token-Based Authentication:** All APIs protected with JWT.
 - **Third-Party Integration:** Simulated Air Traffic Control (ATC) service integration.
 - **Comprehensive Data Modeling:** Relational database with migrations.
+- **Live Maps:** Real-time mapping and visualization of drones, stations, and incidents on the dashboard.
 - **Live Data Integration:** (Planned) Real-time weather data displayed on the dashboard via public APIs.
 - **Desktop Application:** (Planned) Electron-based desktop app for easy access and daily workflow.
 
