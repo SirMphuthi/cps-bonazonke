@@ -754,7 +754,9 @@
         });
 
         document.getElementById('confirmLogoutBtn').addEventListener('click', () => {
-            window.location.reload();
+            document.getElementById('dashboard-container').classList.add('hidden');
+            document.getElementById('landing-page-container').style.display = '';
+            document.getElementById('confirmLogoutModal').classList.add('hidden');
         });
 
         const loginForm = document.getElementById('loginForm');
