@@ -357,6 +357,12 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
     <script>
+    </script>
+</body>
+</html>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script>
     // --- MOCK API & STATE MANAGEMENT ---
     let MOCK_DB = {
         stations: [
@@ -580,18 +586,14 @@
         });
     }
 
-    async function login(username, password) {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await response.json();
-        if (data.access_token) {
-            localStorage.setItem('jwt', data.access_token);
-            return true;
+    function mockLogin(username, password) {
+        const user = MOCK_DB.users.find(u => u.username === username && u.password_hash === password);
+        if (user) {
+            const station = MOCK_DB.stations.find(s => s.id === user.assigned_station_id);
+            document.getElementById('currentStation').textContent = station ? station.name : 'Unassigned';
+            return Promise.resolve({ access_token: 'mock_jwt_token_for_demo' });
         }
-        throw new Error(data.error || 'Login failed');
+        return Promise.reject({ error: 'Invalid credentials' });
     }
 
     function mockReportIncident(data) {
@@ -762,18 +764,17 @@
         });
 
         const loginForm = document.getElementById('loginForm');
-        loginForm.addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            try {
-                await login(loginForm.username.value, loginForm.password.value);
+            mockLogin(loginForm.username.value, loginForm.password.value).then(() => {
                 loginModal.classList.add('hidden');
                 dashboardContainer.classList.remove('hidden');
                 renderAll();
                 if (renderInterval) clearInterval(renderInterval);
                 renderInterval = setInterval(renderAll, 1000);
-            } catch (err) {
-                document.getElementById('loginError').textContent = err.message;
-            }
+            }).catch(() => {
+                document.getElementById('loginError').textContent = 'Invalid credentials.';
+            });
         });
 
         // Dashboard JS
